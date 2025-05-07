@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "subsctracker"
+version = "0.1.0"
+description = "Subscription Management API"
+authors = ["tech2subus"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+flask = "^3.1.0"
+flask-jwt-extended = "^4.7.1"
+sqlalchemy = "^2.0.40"
+pydantic = "^2.11.4"
+python-dotenv = "^1.1.0"
+marshmallow = "^4.0.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+ruff = "^0.8.4"
+pytest = "^7.0.0"
+pytest-cov = "^4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,638 @@
+openapi: 3.1.1
+
+info:
+  title: サブスク管理アプリ API - サブスクリプションと支払い履歴関連
+  description: サブスクリプションと支払い履歴関連のAPI定義
+  version: 1.0.0
+
+# 共通定義参照
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: 'common.api.yaml#/components/securitySchemes/bearerAuth'
+  responses:
+    BadRequest:
+      $ref: 'common.api.yaml#/components/responses/BadRequest'
+    Unauthorized:
+      $ref: 'common.api.yaml#/components/responses/Unauthorized' 
+    Forbidden:
+      $ref: 'common.api.yaml#/components/responses/Forbidden'
+    NotFound:
+      $ref: 'common.api.yaml#/components/responses/NotFound'
+
+  schemas:
+    # サブスクリプション関連のスキーマ
+    SubscriptionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: サブスクリプションID
+        name:
+          type: string
+          description: サービス名
+        price:
+          type: number
+          description: 料金
+        currency:
+          type: string
+          description: 通貨
+        next_payment_date:
+          type: string
+          format: date
+          description: 次回支払日
+        status:
+          type: string
+          description: ステータス
+        labels:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ラベルID
+              name:
+                type: string
+                description: ラベル名
+              color:
+                type: string
+                description: ラベルの色
+            required:
+              - id
+              - name
+              - color
+      required:
+        - id
+        - name
+        - price
+        - currency
+        - next_payment_date
+        - status
+
+    Subscription:
+      allOf:
+        - $ref: '#/components/schemas/SubscriptionSummary'
+        - type: object
+          properties:
+            frequency:
+              type: string
+              description: 支払い頻度
+            initial_payment_date:
+              type: string
+              format: date
+              description: 初回支払日
+            payment_method:
+              type: string
+              description: 支払い方法
+            url:
+              type: string
+              format: uri
+              description: サービスのURL
+            notes:
+              type: string
+              description: メモ
+          required:
+            - frequency
+            - initial_payment_date
+            - payment_method
+
+    SubscriptionCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: サービス名
+        price:
+          type: number
+          minimum: 0
+          description: 料金
+        currency:
+          type: string
+          description: 通貨
+        frequency:
+          type: string
+          description: 支払い頻度
+        initial_payment_date:
+          type: string
+          format: date
+          description: 初回支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+        labels:
+          type: array
+          items:
+            type: string
+          description: ラベルIDの配列
+        url:
+          type: string
+          format: uri
+          description: サービスのURL
+        notes:
+          type: string
+          description: メモ
+      required:
+        - name
+        - price
+        - currency
+        - frequency
+        - initial_payment_date
+        - payment_method
+
+    SubscriptionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: サービス名
+        price:
+          type: number
+          minimum: 0
+          description: 料金
+        currency:
+          type: string
+          description: 通貨
+        frequency:
+          type: string
+          description: 支払い頻度
+        initial_payment_date:
+          type: string
+          format: date
+          description: 初回支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+        labels:
+          type: array
+          items:
+            type: string
+          description: ラベルIDの配列
+        url:
+          type: string
+          format: uri
+          description: サービスのURL
+        notes:
+          type: string
+          description: メモ
+        status:
+          type: string
+          description: ステータス
+
+    # 支払い履歴関連のスキーマ
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 支払いID
+        subscription_id:
+          type: string
+          description: サブスクリプションID
+        subscription_name:
+          type: string
+          description: サブスクリプション名
+        amount:
+          type: number
+          description: 支払額
+        currency:
+          type: string
+          description: 通貨
+        payment_date:
+          type: string
+          format: date
+          description: 支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+        exchange_rate:
+          type: [number, 'null']
+          description: 為替レート
+      required:
+        - id
+        - subscription_id
+        - subscription_name
+        - amount
+        - currency
+        - payment_date
+        - payment_method
+
+    PaymentCreateRequest:
+      type: object
+      properties:
+        subscription_id:
+          type: string
+          description: サブスクリプションID
+        amount:
+          type: number
+          minimum: 0
+          description: 支払額
+        currency:
+          type: string
+          description: 通貨
+        payment_date:
+          type: string
+          format: date
+          description: 支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+      required:
+        - subscription_id
+        - amount
+        - currency
+        - payment_date
+        - payment_method
+
+    PaymentUpdateRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 0
+          description: 支払額
+        currency:
+          type: string
+          description: 通貨
+        payment_date:
+          type: string
+          format: date
+          description: 支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+          
+    # 共通のスキーマ参照
+    Error:
+      $ref: 'common.api.yaml#/components/schemas/Error'
+    Meta:
+      $ref: 'common.api.yaml#/components/schemas/Meta'
+
+paths:
+  # サブスクリプション関連のAPI
+  /subscriptions:
+    get:
+      tags:
+        - サブスクリプション
+      summary: サブスクリプション一覧の取得
+      description: サブスクリプションの一覧を取得します
+      operationId: getSubscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sort_by
+          in: query
+          description: ソート項目（name, price, next_payment_date等）
+          schema:
+            type: string
+        - name: sort_order
+          in: query
+          description: ソート順（昇順/降順）
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: currency
+          in: query
+          description: 通貨フィルター
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: ステータスフィルター
+          schema:
+            type: array
+            items:
+              type: string
+            style: form
+            explode: false
+        - name: labels
+          in: query
+          description: ラベルフィルター
+          schema:
+            type: array
+            items:
+              type: string
+            style: form
+            explode: false
+        - name: price_min
+          in: query
+          description: 最小金額
+          schema:
+            type: number
+        - name: price_max
+          in: query
+          description: 最大金額
+          schema:
+            type: number
+      responses:
+        '200':
+          description: 正常に取得しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      subscriptions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SubscriptionSummary'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - サブスクリプション
+      summary: サブスクリプションの登録
+      description: 新しいサブスクリプションを登録します
+      operationId: createSubscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequest'
+      responses:
+        '201':
+          description: 正常に登録しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /subscriptions/{id}:
+    get:
+      tags:
+        - サブスクリプション
+      summary: サブスクリプション詳細の取得
+      description: 指定されたサブスクリプションの詳細情報を取得します
+      operationId: getSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: サブスクリプションID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 正常に取得しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - サブスクリプション
+      summary: サブスクリプションの更新
+      description: 指定されたサブスクリプションの情報を更新します
+      operationId: updateSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: サブスクリプションID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpdateRequest'
+      responses:
+        '200':
+          description: 正常に更新しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - サブスクリプション
+      summary: サブスクリプションの削除
+      description: 指定されたサブスクリプションを削除します
+      operationId: deleteSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: サブスクリプションID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 正常に削除しました
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # 支払い履歴関連のAPI
+  /payments:
+    get:
+      tags:
+        - 支払い履歴
+      summary: 支払い履歴一覧の取得
+      description: 支払い履歴の一覧を取得します
+      operationId: getPayments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          description: 年
+          schema:
+            type: integer
+        - name: month
+          in: query
+          description: 月
+          schema:
+            type: integer
+        - name: subscription_id
+          in: query
+          description: サブスクリプションID
+          schema:
+            type: string
+        - name: payment_method
+          in: query
+          description: 支払い方法
+          schema:
+            type: string
+        - name: currency
+          in: query
+          description: 通貨
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: ページ番号
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          description: 1ページあたりの件数
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 正常に取得しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      payments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Payment'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - 支払い履歴
+      summary: 支払い記録の作成
+      description: 新しい支払い記録を作成します
+      operationId: createPayment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+      responses:
+        '201':
+          description: 正常に作成しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /payments/{id}:
+    patch:
+      tags:
+        - 支払い履歴
+      summary: 支払い記録の更新
+      description: 指定された支払い記録を更新します
+      operationId: updatePayment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 支払いID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentUpdateRequest'
+      responses:
+        '200':
+          description: 正常に更新しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - 支払い履歴
+      summary: 支払い記録の削除
+      description: 指定された支払い記録を削除します
+      operationId: deletePayment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 支払いID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 正常に削除しました
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'

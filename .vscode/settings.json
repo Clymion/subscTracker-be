@@ -1,0 +1,35 @@
+{    
+    // エディタ共通設定
+    "editor.renderWhitespace": "boundary", // スペースの可視化
+    "editor.tabSize": 4,
+    "files.eol": "\n",
+
+    // Pylanceの型チェックと補完機能は有効化
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    "python.analysis.inlayHints.variableTypes": true,
+
+    // Pylanceのエラー・警告表示を無効化
+    "python.analysis.ignore": ["app", "tests", "scripts"],
+
+    // Ruffの設定
+    "ruff.lint.enable": true,
+    "ruff.importStrategy": "fromEnvironment",
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+
+    // .pyファイルの設定
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "always"
+        }
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+}
