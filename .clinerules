@@ -93,6 +93,79 @@ def handle_api_error(error):
     return response
 ```
 
+## Object-Oriented Design Principles
+
+### Complete Constructor Pattern
+
+Always ensure objects are fully initialized and valid at creation time. Avoid creating "half-baked" objects that require additional setup after instantiation.
+
+```python
+class User:
+    def __init__(self, user_id: str, username: str, email: str, role: str):
+        self.id = user_id
+        self.username = username
+        self.email = email
+        self.role = role
+        # All required fields are set in constructor
+        # Object is ready to use immediately after creation
+```
+
+### Value Objects
+
+Implement immutable value objects for conceptual wholes. Value objects:
+- Are equality-comparable based on their attributes, not identity
+- Are immutable
+- Have no side effects
+- Encapsulate domain rules about the values
+
+```python
+from dataclasses import dataclass
+from datetime import date
+from typing import Optional
+
+@dataclass(frozen=True)  # frozen=True makes it immutable
+class DateRange:
+    start_date: date
+    end_date: date
+    
+    def __post_init__(self):
+        # Validation logic in __post_init__ for frozen dataclasses
+        if self.start_date > self.end_date:
+            raise ValueError("Start date must be before or equal to end date")
+    
+    @property
+    def days(self) -> int:
+        return (self.end_date - self.start_date).days + 1
+    
+    def overlaps_with(self, other: 'DateRange') -> bool:
+        return self.start_date <= other.end_date and other.start_date <= self.end_date
+```
+
+### First-Class Collections
+
+Wrap collections in dedicated classes to enforce business rules and provide domain-specific operations.
+
+```python
+class SubscriptionCollection:
+    def __init__(self, subscriptions: list[Subscription]):
+        self._subscriptions = subscriptions
+    
+    def active_subscriptions(self) -> list[Subscription]:
+        return [sub for sub in self._subscriptions if sub.is_active()]
+    
+    def total_monthly_cost(self) -> float:
+        return sum(sub.monthly_price for sub in self._subscriptions)
+    
+    def get_by_category(self, category: str) -> list[Subscription]:
+        return [sub for sub in self._subscriptions if sub.category == category]
+        
+    def __iter__(self):
+        return iter(self._subscriptions)
+        
+    def __len__(self):
+        return len(self._subscriptions)
+```
+
 ## Test Driven Development
 
 - Create a test list for each feature or API before implementation
@@ -127,6 +200,7 @@ def test_get_subscriptions(client):
 4. Write code to pass tests
 
 ## Project Structure
+Please add directories or files as needed.
 
 ```
 app/
@@ -196,3 +270,25 @@ Use poetry for dependency management:
 - Manage configuration via environment variables
 - Use https://github.com/astral-sh/uv for dependency management
 - Apply Ruff for code style consistency
+
+### Project Rules
+- Define constants and master data in `constants.py` file
+- Centralize error messages in a single file and import that module when using error messages
+```python
+# app/constants.py
+class ErrorMessages:
+    INVALID_CREDENTIALS = "The provided credentials are invalid"
+    USER_NOT_FOUND = "User not found"
+    INSUFFICIENT_PERMISSIONS = "You do not have permission to access this resource"
+
+# Using error messages
+from app.constants import ErrorMessages
+
+def authenticate_user(username: str, password: str) -> dict:
+    user = get_user(username)
+    if not user:
+        raise APIError(ErrorMessages.USER_NOT_FOUND, 404)
+    if not check_password(user, password):
+        raise APIError(ErrorMessages.INVALID_CREDENTIALS, 401)
+    return user
+```
