@@ -1,284 +1,294 @@
-version: 1
+# Project Rules and Guidelines
 
-# 基本設定
-settings:
-  language: python
-  python_version: "3.13"
-  max_line_length: 100
-  indent_size: 4
-  docstring_style: google
+## Basic Configuration
 
-# コード構造と品質
-code_patterns:
-  # 型ヒントを必須に
-  - name: use_type_hints
-    description: "すべての関数とメソッドには型ヒントを使用する"
-    pattern: |
-      すべての関数とメソッドの引数と戻り値に型ヒントを付けること。
-      コレクション型は `typing.List` ではなく `list`, `dict` などの組み込み型を使用すること。
-      例:
-      ```python
-      def get_subscription(subscription_id: str) -> dict:
-          pass
-      
-      def get_subscriptions_by_user(user_id: str) -> list[dict]:
-          pass
-      ```
+- **Language**: Python
+- **Python Version**: 3.13
+- **Max Line Length**: 100
+- **Docstring Style**: Google
 
-  # REST API 設計
-  - name: rest_api_structure
-    description: "Flask RESTful APIの構造"
-    pattern: |
-      API エンドポイントは Blueprint を使用して機能ごとに分割すること。
-      各エンドポイントは RESTful な設計に従い、適切な HTTP メソッド（GET, POST, PUT, DELETE など）を使用すること。
-      例:
-      ```python
-      from flask import Blueprint, jsonify, request
-      
-      subscription_bp = Blueprint('subscription', __name__, url_prefix='/api/v1/subscriptions')
-      
-      @subscription_bp.route('/', methods=['GET'])
-      def get_subscriptions():
-          # 実装
-          return jsonify(result), 200
-      ```
+## Code Structure and Quality
 
-  # JWT認証
-  - name: jwt_auth
-    description: "JWT認証の実装"
-    pattern: |
-      flask-jwt-extended を使用して認証を実装すること。
-      保護されたエンドポイントには @jwt_required() デコレータを使用すること。
-      例:
-      ```python
-      from flask_jwt_extended import jwt_required, get_jwt_identity
-      
-      @subscription_bp.route('/<subscription_id>', methods=['GET'])
-      @jwt_required()
-      def get_subscription(subscription_id: str):
-          current_user = get_jwt_identity()
-          # 実装
-          return jsonify(result), 200
-      ```
+### Type Hints
 
-  # SQLAlchemyモデル
-  - name: sqlalchemy_models
-    description: "SQLAlchemy モデルの定義"
-    pattern: |
-      SQLAlchemy モデルは別ファイルで定義し、型ヒントを使用すること。
-      リレーションシップは明示的に定義すること。
-      例:
-      ```python
-      from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
-      from sqlalchemy.orm import relationship
-      
-      from app.database import Base
-      
-      class Subscription(Base):
-          __tablename__ = 'subscriptions'
-          
-          id: str = Column(String(36), primary_key=True)
-          name: str = Column(String(100), nullable=False)
-          user_id: str = Column(String(36), ForeignKey('users.id'), nullable=False)
-          created_at: datetime = Column(DateTime, nullable=False)
-          
-          # リレーションシップ
-          user = relationship("User", back_populates="subscriptions")
-      ```
+All functions and methods must use type hints for arguments and return values. Use built-in types for collections instead of typing.List.
 
-  # テスト駆動開発
-  - name: test_driven_development
-    description: "TDDアプローチ"
-    pattern: |
-      1. 各機能またはAPIのテストリストを作成すること
-      2. pytest を使用して詳細なテストケースを実装すること
-      3. テストを先に書き、それに合わせて実装を行うこと
-      4. テストファイル名は test_*.py のパターンに従うこと
-      例:
-      ```python
-      # test_subscription_api.py
-      import pytest
-      from flask import Flask
-      from app import create_app
-      
-      @pytest.fixture
-      def client():
-          app = create_app('testing')
-          with app.test_client() as client:
-              yield client
-      
-      def test_get_subscriptions(client):
-          response = client.get('/api/v1/subscriptions/')
-          assert response.status_code == 200
-          data = response.get_json()
-          assert isinstance(data, list)
-      ```
+```python
+def get_subscription(subscription_id: str) -> dict:
+    pass
 
-  # エラーハンドリング
-  - name: error_handling
-    description: "一貫したエラーハンドリング"
-    pattern: |
-      グローバルなエラーハンドラを定義し、標準化されたエラーレスポンスを返すこと。
-      カスタム例外クラスを作成して、特定のエラー状態を表現すること。
-      例:
-      ```python
-      from flask import jsonify
-      
-      class APIError(Exception):
-          def __init__(self, message: str, status_code: int):
-              self.message = message
-              self.status_code = status_code
-              super().__init__(self.message)
-      
-      @app.errorhandler(APIError)
-      def handle_api_error(error):
-          response = jsonify({"error": error.message})
-          response.status_code = error.status_code
-          return response
-      ```
+def get_subscriptions_by_user(user_id: str) -> list[dict]:
+    pass
+```
 
-# ブランチ戦略とコードレビュー
-git:
-  workflow: gitflow
-  branch_naming:
-    feature: "feature/{feature_name}"
-    bugfix: "bugfix/{bug_name}"
-    release: "release/{version}"
-    hotfix: "hotfix/{hotfix_name}"
-  commit_message_format: "{type}({scope}): {message}"
-  commit_types:
-    - feat
-    - fix
-    - docs
-    - style
-    - refactor
-    - test
-    - chore
-  pull_request:
-    template: |
-      ## 概要
-      
-      <!-- 変更内容の概要を記載 -->
-      
-      ## 変更内容
-      
-      <!-- 変更した内容の詳細 -->
-      
-      ## テスト
-      
-      <!-- 実施したテストの概要 -->
-      
-      ## チェックリスト
-      
-      - [ ] テストが追加/修正されている
-      - [ ] ドキュメントが更新されている
-      - [ ] コードレビューの準備ができている
+### REST API Structure
 
-# プロジェクト構造例
-project_structure:
-  directories:
-    - name: app
-      description: "メインアプリケーションコード"
-      subdirectories:
-        - name: api
-          description: "API エンドポイント"
-          subdirectories:
-            - name: v1
-              description: "API バージョン 1"
-              files:
-                - name: auth.py
-                  description: "認証関連のエンドポイント"
-                - name: subscription.py
-                  description: "サブスクリプション関連のエンドポイント"
-                - name: settings.py
-                  description: "設定関連のエンドポイント"
-        - name: models
-          description: "SQLAlchemy モデル"
-          files:
-            - name: user.py
-              description: "ユーザーモデル"
-            - name: subscription.py
-              description: "サブスクリプションモデル"
-        - name: services
-          description: "ビジネスロジック"
-          files:
-            - name: auth_service.py
-              description: "認証サービス"
-            - name: subscription_service.py
-              description: "サブスクリプションサービス"
-        - name: schemas
-          description: "検証スキーマ"
-          files:
-            - name: auth.py
-              description: "認証関連のスキーマ"
-            - name: subscription.py
-              description: "サブスクリプション関連のスキーマ"
-    - name: tests
-      description: "テストコード"
-      subdirectories:
-        - name: unit
-          description: "ユニットテスト"
-        - name: integration
-          description: "統合テスト"
-        - name: api
-          description: "API テスト"
-    - name: docs
-      description: "ドキュメントや仕様書を格納。正とする仕様や設計はこのディレクトリを参照すること"
-      subdirectories:
-        - name: openapi
-          description: "OpenAPI 仕様"
-        - name: libraries
-          description: "Roo Codeが生成したmarkdownドキュメントなどを格納するディレクトリ"
-        - name: db
-          description: "データベース定義書を格納するディレクトリ"
-          subdirectories:
-            - name: table-definition.md
-              description: "テーブル定義書"
-        - name: feature-list.md
-          description: "機能一覧"
-        - name: MVP-proposal.md
-          description: "MVP企画書"
-        - name: system-proposal.md
-          description: "システム企画書"
-    - name: migrations
-      description: "データベースマイグレーション"
+Use Flask Blueprint to separate API endpoints by functionality. Follow RESTful design with appropriate HTTP methods.
 
-# 依存関係
-dependencies:
-  poetry:
-    dev_dependencies:
-      - pytest
-      - pytest-cov
-      - black
-      - isort
-    dependencies:
-      - flask
-      - flask-jwt-extended
-      - sqlalchemy
-      - alembic
-      - pydantic
-      - python-dotenv
-      - marshmallow
+```python
+from flask import Blueprint, jsonify, request
 
-# ドキュメント生成
-documentation:
-  auto_generate:
-    enabled: true
-    tool: sphinx
-    output_directory: docs/libraries
+subscription_bp = Blueprint('subscription', __name__, url_prefix='/api/v1/subscriptions')
 
-# TDD関連の設定
-testing:
-  framework: pytest
-  test_list_format: |
-    # テストリスト: {feature_name}
+@subscription_bp.route('/', methods=['GET'])
+def get_subscriptions():
+    # Implementation
+    return jsonify(result), 200
+```
+
+### JWT Authentication
+
+Implement authentication using flask-jwt-extended. Use @jwt_required() decorator for protected endpoints.
+
+```python
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+@subscription_bp.route('/<subscription_id>', methods=['GET'])
+@jwt_required()
+def get_subscription(subscription_id: str):
+    current_user = get_jwt_identity()
+    # Implementation
+    return jsonify(result), 200
+```
+
+### SQLAlchemy Models
+
+Define SQLAlchemy models in separate files with type hints. Explicitly define relationships.
+
+```python
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+class Subscription(Base):
+    __tablename__ = 'subscriptions'
     
-    ## API エンドポイント: {endpoint}
+    id: str = Column(String(36), primary_key=True)
+    name: str = Column(String(100), nullable=False)
+    user_id: str = Column(String(36), ForeignKey('users.id'), nullable=False)
+    created_at: datetime = Column(DateTime, nullable=False)
     
-    - [ ] {test_case_1}
-    - [ ] {test_case_2}
-    - [ ] {test_case_3}
-  
-  test_file_naming: "test_{module_name}.py"
-  fixtures_directory: "tests/fixtures"
-  mocking_library: "unittest.mock"
+    # Relationships
+    user = relationship("User", back_populates="subscriptions")
+```
+
+### Error Handling
+
+Define global error handlers and return standardized error responses. Create custom exception classes.
+
+```python
+from flask import jsonify
+
+class APIError(Exception):
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(self.message)
+
+@app.errorhandler(APIError)
+def handle_api_error(error):
+    response = jsonify({"error": error.message})
+    response.status_code = error.status_code
+    return response
+```
+
+## Object-Oriented Design Principles
+
+### Complete Constructor Pattern
+
+Always ensure objects are fully initialized and valid at creation time. Avoid creating "half-baked" objects that require additional setup after instantiation.
+
+```python
+class User:
+    def __init__(self, user_id: str, username: str, email: str, role: str):
+        self.id = user_id
+        self.username = username
+        self.email = email
+        self.role = role
+        # All required fields are set in constructor
+        # Object is ready to use immediately after creation
+```
+
+### Value Objects
+
+Implement immutable value objects for conceptual wholes. Value objects:
+- Are equality-comparable based on their attributes, not identity
+- Are immutable
+- Have no side effects
+- Encapsulate domain rules about the values
+
+```python
+from dataclasses import dataclass
+from datetime import date
+from typing import Optional
+
+@dataclass(frozen=True)  # frozen=True makes it immutable
+class DateRange:
+    start_date: date
+    end_date: date
+    
+    def __post_init__(self):
+        # Validation logic in __post_init__ for frozen dataclasses
+        if self.start_date > self.end_date:
+            raise ValueError("Start date must be before or equal to end date")
+    
+    @property
+    def days(self) -> int:
+        return (self.end_date - self.start_date).days + 1
+    
+    def overlaps_with(self, other: 'DateRange') -> bool:
+        return self.start_date <= other.end_date and other.start_date <= self.end_date
+```
+
+### First-Class Collections
+
+Wrap collections in dedicated classes to enforce business rules and provide domain-specific operations.
+
+```python
+class SubscriptionCollection:
+    def __init__(self, subscriptions: list[Subscription]):
+        self._subscriptions = subscriptions
+    
+    def active_subscriptions(self) -> list[Subscription]:
+        return [sub for sub in self._subscriptions if sub.is_active()]
+    
+    def total_monthly_cost(self) -> float:
+        return sum(sub.monthly_price for sub in self._subscriptions)
+    
+    def get_by_category(self, category: str) -> list[Subscription]:
+        return [sub for sub in self._subscriptions if sub.category == category]
+        
+    def __iter__(self):
+        return iter(self._subscriptions)
+        
+    def __len__(self):
+        return len(self._subscriptions)
+```
+
+## Test Driven Development
+
+- Create a test list for each feature or API before implementation
+- Implement detailed test cases using pytest
+- Write tests first, then implement against them
+- Follow test_*.py naming pattern
+
+```python
+# test_subscription_api.py
+import pytest
+from flask import Flask
+from app import create_app
+
+@pytest.fixture
+def client():
+    app = create_app('testing')
+    with app.test_client() as client:
+        yield client
+
+def test_get_subscriptions(client):
+    response = client.get('/api/v1/subscriptions/')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+```
+
+## TDD Workflow
+
+1. Before starting implementation, create a test list for each feature
+2. Output test lists to `/docs/tests/` directory and seek confirmation
+3. Implement tests based on confirmed test list
+4. Write code to pass tests
+
+## Project Structure
+Please add directories or files as needed.
+
+```
+app/
+├── api/
+│   └── v1/
+│       ├── auth.py
+│       ├── subscription.py
+│       └── settings.py
+├── models/
+│   ├── user.py
+│   └── subscription.py
+├── services/
+│   ├── auth_service.py
+│   └── subscription_service.py
+└── schemas/
+    ├── auth.py
+    └── subscription.py
+tests/
+├── unit/
+├── integration/
+└── api/
+docs/
+├── openapi/        # OpenAPI specification
+├── libraries/      # Generated markdown docs
+├── db/             # Database definitions
+│   └── table-definition.md
+├── tests/          # Test lists for TDD
+├── feature-list.md
+├── MVP-proposal.md
+└── system-proposal.md
+migrations/
+```
+
+## Documentation
+
+- **OpenAPI Definition**: Located at `/docs/openapi/`
+- **DB Definition**: Located at `/docs/db/`
+- **Test Lists**: Located at `/docs/tests/`
+
+## Git Workflow
+
+- **Workflow**: Gitflow
+- **Branch Naming**:
+  - `feature/{feature_name}`
+  - `bugfix/{bug_name}`
+  - `release/{version}`
+  - `hotfix/{hotfix_name}`
+- **Commit Message Format**: `{type}({scope}): {message}`
+- **Commit Types**: feat, fix, docs, style, refactor, test, chore
+
+## Dependencies
+
+Use poetry for dependency management:
+- **Dev**: pytest, pytest-cov, black, isort
+- **Main**: flask, flask-jwt-extended, sqlalchemy, alembic, pydantic, python-dotenv, marshmallow
+
+## Python Best Practices
+
+- Always add typing annotations to all functions and classes
+- Include return types for all functions
+- Add descriptive docstrings following PEP 257
+- Use pytest for all testing (not unittest)
+- Create necessary `__init__.py` files
+- Properly annotate test fixtures
+- Follow modular design principles
+- Implement robust error handling and logging
+- Manage configuration via environment variables
+- Use https://github.com/astral-sh/uv for dependency management
+- Apply Ruff for code style consistency
+
+### Project Rules
+- Define constants and master data in `constants.py` file
+- Centralize error messages in a single file and import that module when using error messages
+```python
+# app/constants.py
+class ErrorMessages:
+    INVALID_CREDENTIALS = "The provided credentials are invalid"
+    USER_NOT_FOUND = "User not found"
+    INSUFFICIENT_PERMISSIONS = "You do not have permission to access this resource"
+
+# Using error messages
+from app.constants import ErrorMessages
+
+def authenticate_user(username: str, password: str) -> dict:
+    user = get_user(username)
+    if not user:
+        raise APIError(ErrorMessages.USER_NOT_FOUND, 404)
+    if not check_password(user, password):
+        raise APIError(ErrorMessages.INVALID_CREDENTIALS, 401)
+    return user
+```

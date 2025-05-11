@@ -20,8 +20,8 @@
                 "christian-kohler.path-intellisense",
                 "Gruntfuggly.todo-tree",
                 "charliermarsh.ruff",
-                "RooVeterinaryInc.roo-cline",
-                "ms-vscode.test-adapter-converter"
+                "ms-vscode.test-adapter-converter",
+                "saoudrizwan.claude-dev"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
