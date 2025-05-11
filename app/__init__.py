@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -9,9 +11,11 @@ db = SQLAlchemy()
 jwt = JWTManager()
 
 
-def create_app(config_class: type[Config]) -> Flask:
+def create_app(config_class: type[Config] | None = None) -> Flask:
     """Application factory to create Flask app instances."""
     app = Flask(__name__)
+    if config_class is None:
+        config_class = Config
     app.config.from_object(config_class)
 
     db.init_app(app)
