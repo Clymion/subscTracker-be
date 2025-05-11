@@ -29,8 +29,12 @@ max-complexity = 10
 "tests/**/*.py" = [
     "INP001",  # Implicit namespace package
     "ANN201",  # Missing return type annotation for public function
+    "ANN202",  # Missing raise type annotation for public function
     "S101",    # Use of assert detected
     "S105",    # Permit of hard-coded password
     "PLR2004", # Magic value used in comparison
     "FA100",   # Disable type hinting of Optional, Union, etc.
+    "EM101",
+    "D103",
+    "TRY003",
 ]

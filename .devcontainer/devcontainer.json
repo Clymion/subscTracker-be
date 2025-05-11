@@ -21,7 +21,9 @@
                 "Gruntfuggly.todo-tree",
                 "charliermarsh.ruff",
                 "ms-vscode.test-adapter-converter",
-                "saoudrizwan.claude-dev"
+                "saoudrizwan.claude-dev",
+                "tamasfe.even-better-toml",
+                "shardulm94.trailing-spaces"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",

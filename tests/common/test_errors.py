@@ -1,6 +1,6 @@
 import pytest
-from flask import Flask, jsonify
-from werkzeug.exceptions import HTTPException
+from flask import Flask
+from flask.testing import FlaskClient
 
 from app.common.errors import (
     APIError,
@@ -36,11 +36,11 @@ def app():
 
 
 @pytest.fixture
-def client(app):
+def client(app: Flask):
     return app.test_client()
 
 
-def test_validation_error(client):
+def test_validation_error(client: FlaskClient):
     response = client.get("/raise-validation-error")
     assert response.status_code == 400
     data = response.get_json()
@@ -50,7 +50,7 @@ def test_validation_error(client):
     assert "reason" in data["error"]["details"]
 
 
-def test_authentication_error(client):
+def test_authentication_error(client: FlaskClient):
     response = client.get("/raise-auth-error")
     assert response.status_code == 401
     data = response.get_json()
@@ -58,7 +58,7 @@ def test_authentication_error(client):
     assert "Invalid token" in data["error"]["message"]
 
 
-def test_resource_not_found_error(client):
+def test_resource_not_found_error(client: FlaskClient):
     response = client.get("/raise-not-found-error")
     assert response.status_code == 404
     data = response.get_json()
@@ -66,7 +66,7 @@ def test_resource_not_found_error(client):
     assert "User not found" in data["error"]["message"]
 
 
-def test_generic_api_error(client):
+def test_generic_api_error(client: FlaskClient):
     response = client.get("/raise-generic-api-error")
     assert response.status_code == 500
     data = response.get_json()
@@ -74,7 +74,7 @@ def test_generic_api_error(client):
     assert "A generic error occurred" in data["error"]["message"]
 
 
-def test_unhandled_http_exception(client):
+def test_unhandled_http_exception(client: FlaskClient):
     @client.application.route("/raise-http-exception")
     def raise_http_exception():
         from werkzeug.exceptions import Forbidden
