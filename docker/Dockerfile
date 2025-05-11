@@ -6,7 +6,7 @@ RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 
 # 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
-    git curl \
+    git curl procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Poetry のインストール

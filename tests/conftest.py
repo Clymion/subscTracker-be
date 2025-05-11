@@ -1,7 +1,8 @@
 import pytest
+from flask import Flask
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app import create_app
 from app.database import Base, SessionLocal, engine
@@ -13,7 +14,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 from sqlalchemy import create_engine
 
 test_engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False},
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
@@ -30,7 +31,7 @@ def app():
             "TESTING": True,
             "SQLALCHEMY_DATABASE_URI": SQLALCHEMY_DATABASE_URL,
             "WTF_CSRF_ENABLED": False,
-        }
+        },
     )
 
     # Create tables
@@ -44,9 +45,9 @@ def app():
         Base.metadata.drop_all(bind=test_engine)
 
 
-@pytest.fixture(scope="function")
-def db_session(app):
-    """Creates a new database session for a test."""
+@pytest.fixture
+def db_session(app: Flask):
+    """Create a new database session for a test."""
     connection = test_engine.connect()
     transaction = connection.begin()
 
@@ -59,10 +60,9 @@ def db_session(app):
     connection.close()
 
 
-@pytest.fixture(scope="function")
-def client(app, db_session):
-    """A test client for the app."""
-    # Override the app's db session with the test session
+@pytest.fixture
+def client(app: Flask, db_session: Session):
+    """Override the app's db session with the test session"""
     app.db_session = db_session
     with app.test_client() as client:
         yield client
@@ -70,7 +70,7 @@ def client(app, db_session):
 
 # Helper function to reset database before each test if needed
 @pytest.fixture(autouse=True)
-def reset_db(db_session):
+def reset_db(db_session: Session):
     """Reset database state before each test."""
     # Could add logic here if needed to reset data
     yield
