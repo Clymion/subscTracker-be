@@ -1,15 +1,18 @@
 # Active Context
 
 ## Current work focus
-- API実装はまだ行われていないため、API仕様書（OpenAPI定義）に基づく実装計画の策定
+- エラー共通処理の実装とリファクタリング完了
+- 認証関連APIの仮実装にTODOコメントを追加し、将来的な本格実装の必要性を明示
 
 ## Recent changes
-- メモリーバンクのコアファイルを読み込み、API実装が未着手であることを確認
-- docs/openapi/配下のAPI仕様書を確認
+- app/constants.pyにエラーメッセージの集中管理クラスを追加
+- app/common/error_handlers.pyにFlask用共通エラーハンドラーを実装し、型付けとdocstringを追加
+- app/api/v1/auth.pyに認証APIの仮実装を追加し、TODOコメントで仮実装であることを明示
 
 ## Next steps
-- API仕様書に基づき、APIエンドポイントの実装を開始する準備
-- 必要に応じてメモリーバンクの更新
+- 共通処理の他の部分（ログ設計、テスト共通処理、認証・認可共通処理、APIレスポンス共通処理）の設計と実装
+- 認証・ユーザー関連APIの本格実装
+- サブスクリプション管理APIの実装
 
 ## Active decisions and considerations
 - 実装優先順位は以下の通り
@@ -24,3 +27,5 @@
   4. 支払い履歴管理APIの実装
   5. 設定関連APIの実装
   6. 通知サブシステムの実装
+- エラー共通処理は集中管理と標準化を重視し、Flaskのエラーハンドラーで統一的に処理
+- 認証APIは現状仮実装であり、今後の拡張を見据えた設計が必要
