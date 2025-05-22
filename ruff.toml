@@ -12,7 +12,7 @@ indent-width = 4
 select = [
     "ALL"
 ]
-ignore = ["D200", "D212", "D400", "D415", "E402", "FA102"]
+ignore = ["D200", "D212", "D400", "D415", "E402", "FA102", "RUF002"]
 fixable = ["ALL"]
 
 
