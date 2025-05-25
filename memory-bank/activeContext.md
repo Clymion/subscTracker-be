@@ -11,16 +11,17 @@
 - app/api/v1/auth.pyに認証APIの仮実装を追加し、TODOコメントで仮実装であることを明示
 - tests/common/conftest.pyにテスト共通処理のpytestフィクスチャを実装
 - app/common/logging_setup.pyにログ設計とロギング機能（リクエスト・レスポンスログ、エラーログ、ログレベル設定）の実装完了
-- app/config.pyに環境設定管理）の設計と実装完了
+- app/config.pyに環境設定管理の設計と実装完了
+- app/common/auth_middleware.pyに認証ミドルウェアを実装完了
+- app/common/response_utils.pyに共通レスポンスを実装完了
 
 ## Next steps
-- 共通処理の他の部分（APIレスポンス共通処理）の設計と実装
 - 認証・ユーザー関連APIの本格実装
 - サブスクリプション管理APIの実装
 
 ## Active decisions and considerations
 - 実装優先順位は以下の通り
-  1. 共通処理の実装
+  1. 共通処理の実装【完了】
     1.1 エラー共通処理（標準エラーフォーマット、例外ハンドリング、エラー分類）【完了】
     1.2 ログ設計とロギング機能（リクエスト・レスポンスログ、エラーログ、ログレベル設定）【完了】
     1.3 テスト共通処理（フィクスチャ、モック、環境初期化）【完了】

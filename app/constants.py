@@ -9,7 +9,7 @@ class ErrorMessages:
     INVALID_CREDENTIALS = "The provided credentials are invalid"
     USER_NOT_FOUND = "User not found"
     INSUFFICIENT_PERMISSIONS = "You do not have permission to access this resource"
-    TOKEN_EXPIRED = "Authentication token has expired"
+    TOKEN_EXPIRED = "Authentication token has expired"  # noqa: S105
 
     # Subscription errors
     SUBSCRIPTION_NOT_FOUND = "Subscription not found"
@@ -25,3 +25,8 @@ class ErrorMessages:
     NOT_FOUND = "Resource not found"
     UNAUTHORIZED = "Unauthorized access"
     FORBIDDEN = "Forbidden access"
+
+    # Pagination errors
+    PAGINATION_LIMIT_OFFSET_NOT_INTEGER = "limit and offset must be integers"
+    PAGINATION_LIMIT_OUT_OF_RANGE = "limit must be between 0 and {max_limit}"
+    PAGINATION_OFFSET_NEGATIVE = "offset must be non-negative"
