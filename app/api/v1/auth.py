@@ -7,7 +7,6 @@ from flask_jwt_extended import (
 )
 
 from app.constants import ErrorMessages
-from app.models.user import User
 from app.services.auth_service import AuthService
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
