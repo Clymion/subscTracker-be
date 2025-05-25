@@ -2,3 +2,6 @@ services:
   backend-api:
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
+    volumes:
+      # clineのタスク履歴を永続化
+      - ./.tmp/cline/tasks:/root/.vscode-server/data/User/globalStorage/saoudrizwan.claude-dev/tasks/
