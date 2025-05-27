@@ -12,9 +12,6 @@ from app.services.auth_service import AuthService
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 auth_service = AuthService()
 
-# TODO: This is a provisional implementation for authentication endpoints.
-#       It should be replaced with a fully featured and secure implementation.
-
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -30,20 +27,19 @@ def login():
             401,
         )
 
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=user.user_id)
+    refresh_token = create_refresh_token(identity=user.user_id)
 
     return (
         jsonify(
             {
                 "token": access_token,
                 "refresh_token": refresh_token,
-                "user": {"id": user.id, "username": user.username, "email": user.email},
+                "user": {"id": user.user_id, "username": user.username, "email": user.email},
             }
         ),
         200,
     )
-
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
@@ -53,20 +49,19 @@ def register():
     except ValueError as e:
         return jsonify({"error": {"code": 400, "message": str(e)}}), 400
 
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=user.user_id)
+    refresh_token = create_refresh_token(identity=user.user_id)
 
     return (
         jsonify(
             {
                 "token": access_token,
                 "refresh_token": refresh_token,
-                "user": {"id": user.id, "username": user.username, "email": user.email},
+                "user": {"id": user.user_id, "username": user.username, "email": user.email},
             }
         ),
         201,
     )
-
 
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)

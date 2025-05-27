@@ -3,8 +3,6 @@ import os
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient, FlaskCliRunner
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
 from app import create_app
 from app.models import db as _db
@@ -28,56 +26,32 @@ def app() -> Flask:
             "TESTING": True,
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        }
+        },
     )
 
     with app.app_context():
+        _db.create_all()
         yield app
+        _db.drop_all()
 
 
-@pytest.fixture(scope="session")
-def db(app: Flask) -> _db:
-    """
-    Create a new database for the test session.
+@pytest.fixture
+def session(app: Flask):
+    """Create a database session for tests."""
+    with app.app_context():
+        connection = _db.engine.connect()
+        transaction = connection.begin()
 
-    Args:
-        app (Flask): The Flask application instance.
+        session_options = {"bind": connection, "binds": {}}
+        session = _db.sessionmaker(**session_options)()
 
-    Returns:
-        _db: The SQLAlchemy database instance.
-    """
-    _db.app = app
-    _db.create_all()
+        _db.session = session
 
-    yield _db
+        yield session
 
-    _db.drop_all()
-
-
-@pytest.fixture(autouse=True)
-def session(db: _db):
-    """
-    Create a new database session for a test.
-
-    Args:
-        db (_db): The SQLAlchemy database instance.
-
-    Yields:
-        Session: A SQLAlchemy scoped session for the test.
-    """
-    connection = db.engine.connect()
-    transaction = connection.begin()
-
-    options = {"bind": connection, "binds": {}}
-    session = db.create_scoped_session(options=options)
-
-    db.session = session
-
-    yield session
-
-    transaction.rollback()
-    connection.close()
-    session.remove()
+        session.close()
+        transaction.rollback()
+        connection.close()
 
 
 @pytest.fixture
@@ -109,7 +83,7 @@ def runner(app: Flask) -> FlaskCliRunner:
 
 
 @pytest.fixture
-def auth_headers(client: FlaskClient) -> dict[str, str]:
+def auth_headers() -> dict[str, str]:
     """
     Generate authentication headers for tests.
 
