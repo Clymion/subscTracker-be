@@ -27,3 +27,5 @@ MANIFEST
 *.bak*
 .coverage
 *.tmp*
+logs/*
+instance/*
