@@ -12,7 +12,7 @@ indent-width = 4
 select = [
     "ALL"
 ]
-ignore = ["D200", "D212", "D400", "D401", "D415", "E402", "FA102", "RUF002"]
+ignore = ["D200", "D212", "D400", "D401", "D413", "D415", "E402", "FA102", "RUF002"]
 fixable = ["ALL"]
 
 
@@ -29,6 +29,7 @@ max-complexity = 10
 "tests/**/*.py" = [
     "INP001",  # Implicit namespace package
     "ANN201",  # Missing return type annotation for public function
+    "ANN202",  # Missing return type annotation for public function
     "D100", "D413",
     "S101",    # Use of assert detected
     "S105", "S106", "S107",    # Permit of hard-coded password

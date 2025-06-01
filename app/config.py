@@ -73,6 +73,21 @@ class AppConfig(BaseSettings):
             raise ValueError(msg)
         return v
 
+    @property
+    def database_url(self) -> str:
+        """Generate SQLite database URL for production."""
+        return f"sqlite:///{self.DB_NAME}"
+
+    def to_flask_config(self) -> dict:
+        """Convert to Flask test configuration format."""
+        return {
+            "SQLALCHEMY_DATABASE_URI": self.database_url,
+            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
+            "DEBUG": self.DEBUG,
+            "TESTING": False,
+        }
+
 
 class TestConfig(BaseSettings):
     """
@@ -128,6 +143,16 @@ class TestConfig(BaseSettings):
         if self.DB_NAME == ":memory:":
             return "sqlite:///:memory:"
         return f"sqlite:///{self.DB_NAME}"
+
+    def to_flask_config(self) -> dict:
+        """Convert to Flask test configuration format."""
+        return {
+            "SQLALCHEMY_DATABASE_URI": self.database_url,
+            "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+            "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
+            "DEBUG": self.DEBUG,
+            "TESTING": True,
+        }
 
 
 def get_config(testing: bool = False) -> AppConfig | TestConfig:

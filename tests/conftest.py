@@ -11,7 +11,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 from flask_jwt_extended import JWTManager
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, scoped_session
 
 from app import create_app
 from app.config import TestConfig, get_config
@@ -41,7 +41,7 @@ def app(test_config: TestConfig) -> Generator[Flask, None, None]:
     Yields:
         Flask: Configured Flask application.
     """
-    app = create_app()
+    app = create_app(config_obj=test_config)
 
     # Apply test configuration
     app.config.update(
@@ -98,12 +98,13 @@ def db_session(app: Flask) -> Generator[Session, None, None]:
         # Create session bound to the connection
         session = _db.sessionmaker(bind=connection)()
 
-        # Make this session available to the app
-        _db.session = session
+        scoped_sess = scoped_session(lambda: session)
+        _db.session = scoped_sess
 
         yield session
 
-        # Cleanup: rollback transaction and close connection
+        # Cleanup: scoped session removal and transaction rollback
+        scoped_sess.remove()
         session.close()
         transaction.rollback()
         connection.close()
