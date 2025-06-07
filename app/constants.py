@@ -2,6 +2,7 @@
 定数定義モジュール
 """
 
+
 class ValidationConstants:
     """
     バリデーション関連の定数クラス。
@@ -16,6 +17,132 @@ class ValidationConstants:
 
     # Email validation pattern
     EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+
+
+class CurrencyConstants:
+    """
+    通貨関連の定数クラス。
+    """
+
+    # Supported currencies (only USD and JPY)
+    USD = "USD"
+    JPY = "JPY"
+
+    @classmethod
+    def all(cls) -> list[str]:
+        """Return all supported currency codes."""
+        return [cls.USD, cls.JPY]
+
+    @classmethod
+    def is_valid(cls, currency: str) -> bool:
+        """Check if currency code is supported."""
+        return currency.upper() in cls.all()
+
+
+class SubscriptionStatus:
+    """
+    サブスクリプションステータス定数クラス。
+    """
+
+    TRIAL = "trial"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+
+    @classmethod
+    def all(cls) -> list[str]:
+        """Return all valid subscription statuses."""
+        return [cls.TRIAL, cls.ACTIVE, cls.SUSPENDED, cls.CANCELLED, cls.EXPIRED]
+
+    @classmethod
+    def is_valid(cls, status: str) -> bool:
+        """Check if status is valid."""
+        return status in cls.all()
+
+
+class PaymentFrequency:
+    """
+    支払頻度定数クラス。
+    """
+
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    YEARLY = "yearly"
+
+    @classmethod
+    def all(cls) -> list[str]:
+        """Return all valid payment frequencies."""
+        return [cls.MONTHLY, cls.QUARTERLY, cls.YEARLY]
+
+    @classmethod
+    def is_valid(cls, frequency: str) -> bool:
+        """Check if payment frequency is valid."""
+        return frequency in cls.all()
+
+
+class PaymentMethods:
+    """
+    支払方法定数クラス。
+    """
+
+    CREDIT_CARD = "credit_card"
+    BANK_TRANSFER = "bank_transfer"
+    PAYPAL = "paypal"
+    APPLE_PAY = "apple_pay"
+    GOOGLE_PAY = "google_pay"
+
+    @classmethod
+    def all(cls) -> list[str]:
+        """Return all valid payment methods."""
+        return [
+            cls.CREDIT_CARD,
+            cls.BANK_TRANSFER,
+            cls.PAYPAL,
+            cls.APPLE_PAY,
+            cls.GOOGLE_PAY,
+        ]
+
+    @classmethod
+    def is_valid(cls, method: str) -> bool:
+        """Check if payment method is valid."""
+        return method in cls.all()
+
+
+from typing import ClassVar
+
+
+class LabelConstants:
+    """
+    ラベル関連の定数クラス。
+    """
+
+    # Maximum hierarchy depth
+    MAX_HIERARCHY_DEPTH = 5
+
+    # Default system label names
+    DEFAULT_LABELS: ClassVar[list[str]] = [
+        "Entertainment",
+        "Productivity",
+        "Education",
+        "Health",
+        "Finance",
+        "Shopping",
+        "Communication",
+        "Development",
+    ]
+
+    # Default colors for system labels (hex format)
+    DEFAULT_COLORS: ClassVar[list[str]] = [
+        "#FF6B6B",  # Red
+        "#4ECDC4",  # Teal
+        "#45B7D1",  # Blue
+        "#96CEB4",  # Green
+        "#FFEAA7",  # Yellow
+        "#DDA0DD",  # Plum
+        "#98D8C8",  # Mint
+        "#F7DC6F",  # Light Yellow
+    ]
 
 
 class ErrorMessages:
@@ -35,6 +162,33 @@ class ErrorMessages:
     SUBSCRIPTION_NOT_FOUND = "Subscription not found"
     DUPLICATE_SUBSCRIPTION = "A subscription with this name already exists"
     INVALID_SUBSCRIPTION_STATUS = "Invalid subscription status"
+    INVALID_CURRENCY = "Invalid currency code. Supported currencies: USD, JPY"
+    INVALID_PAYMENT_FREQUENCY = "Invalid payment frequency"
+
+    # Subscription validation errors
+    UNSUPPORTED_CURRENCY = "Unsupported currency"
+    INVALID_STATUS = "Invalid status"
+    PRICE_MUST_BE_POSITIVE = "Price must be positive"
+    NEXT_PAYMENT_DATE_BEFORE_INITIAL = (
+        "Next payment date cannot be before initial payment date"
+    )
+    UNKNOWN_PAYMENT_FREQUENCY = "Unknown payment frequency"
+
+    # Label errors
+    LABEL_NOT_FOUND = "Label not found"
+    DUPLICATE_LABEL = "A label with this name already exists"
+    INVALID_LABEL_COLOR = "Invalid color format. Use hex format (e.g., #FFFFFF)"
+    LABEL_HIERARCHY_TOO_DEEP = (
+        f"Label hierarchy cannot exceed {LabelConstants.MAX_HIERARCHY_DEPTH} levels"
+    )
+    CIRCULAR_REFERENCE = "Circular reference detected in label hierarchy"
+    SYSTEM_LABEL_READONLY = "System labels cannot be modified or deleted"
+
+    # Label validation errors
+    LABEL_NAME_REQUIRED = "Label name is required"
+    LABEL_COLOR_REQUIRED = "Label color is required"
+    INVALID_HEX_COLOR = "Invalid hex color format"
+    LABEL_NAME_TOO_LONG = "Label name is too long"
 
     # Payment errors
     PAYMENT_FAILED = "Payment processing failed"

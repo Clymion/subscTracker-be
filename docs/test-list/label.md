@@ -34,20 +34,20 @@ Complete label management system including model, service, and API for organizin
 - [ ] Test system_label flag (cannot be deleted if true)
 
 #### Relationship Validation
-- [ ] Test user relationship (foreign key constraint)
-- [ ] Test user relationship returns correct User object
 - [ ] Test subscriptions relationship (many-to-many)
 - [ ] Test adding subscriptions to label
 - [ ] Test removing subscriptions from label
+
+#### Relationship Validation (Model-Level Only)
+- [ ] Test user relationship (foreign key constraint)
+- [ ] Test user relationship returns correct User object
 - [ ] Test parent-child relationship (self-referential)
 - [ ] Test children collection returns direct children only
 - [ ] Test ancestors traversal up the hierarchy
 - [ ] Test descendants traversal down the hierarchy
 
-#### Business Logic Methods
-- [ ] Test calculate_usage_count() returns correct real-time count
-- [ ] Test is_used() returns correct boolean
-- [ ] Test can_be_deleted() based on usage and system_label flag
+#### Business Logic Methods (Without Subscription Dependencies)
+- [ ] Test can_be_deleted() based on system_label flag only
 - [ ] Test color validation accepts valid hex colors (#FFFFFF, #FFF)
 - [ ] Test color validation rejects invalid formats
 - [ ] Test get_full_path() returns hierarchical path (Parent > Child > Grandchild)
@@ -56,6 +56,12 @@ Complete label management system including model, service, and API for organizin
 - [ ] Test get_depth() returns hierarchy level (0 for root)
 - [ ] Test is_ancestor_of() checks parent-child relationships
 - [ ] Test prevent_circular_reference() validation
+
+#### Business Logic Methods (Mock Subscription Dependencies)
+- [ ] Test calculate_usage_count() method exists and returns integer
+- [ ] Test is_used() method exists and returns boolean
+- [ ] Test usage calculation logic with mocked subscription relationships
+- [ ] Test can_be_deleted() considers both system_label and usage (with mocked usage)
 
 ### Unit Tests - Label Service
 

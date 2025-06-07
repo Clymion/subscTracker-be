@@ -6,13 +6,15 @@ test data without complex abstractions. Each function has a clear,
 single purpose and is easy to understand.
 """
 
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Optional
 
 from flask import Response
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy.orm import Session
 
+from app.models.label import Label
+from app.models.subscription import Subscription
 from app.models.user import User
 
 
@@ -76,6 +78,216 @@ def make_and_save_user(db_session: Session, **kwargs) -> User:
     """
     user = make_user(**kwargs)
     return save_user(db_session, user)
+
+
+def make_subscription(
+    user_id: int,
+    name: str = "Test Subscription",
+    price: float = 9.99,
+    currency: str = "USD",
+    payment_frequency: str = "monthly",
+    payment_method: str = "credit_card",
+    status: str = "active",
+    initial_payment_date: Optional[date] = None,
+    next_payment_date: Optional[date] = None,
+    **kwargs,
+) -> Subscription:
+    """
+    Create a Subscription instance for testing.
+
+    Args:
+        user_id: ID of the user who owns the subscription.
+        name: Subscription service name.
+        price: Subscription price.
+        currency: Currency code (USD or JPY).
+        payment_frequency: Payment frequency (monthly, quarterly, yearly).
+        payment_method: Payment method.
+        status: Subscription status.
+        initial_payment_date: Initial payment date. Defaults to today.
+        next_payment_date: Next payment date. Defaults to initial_payment_date + 1 month.
+        **kwargs: Additional subscription attributes.
+
+    Returns:
+        Subscription: Subscription instance ready for testing.
+    """
+    if initial_payment_date is None:
+        initial_payment_date = date.today()
+
+    if next_payment_date is None:
+        if payment_frequency == "monthly":
+            next_payment_date = initial_payment_date + timedelta(days=30)
+        elif payment_frequency == "quarterly":
+            next_payment_date = initial_payment_date + timedelta(days=90)
+        elif payment_frequency == "yearly":
+            next_payment_date = initial_payment_date + timedelta(days=365)
+        else:
+            next_payment_date = initial_payment_date + timedelta(days=30)
+
+    subscription_data = {
+        "user_id": user_id,
+        "name": name,
+        "price": price,
+        "currency": currency,
+        "payment_frequency": payment_frequency,
+        "payment_method": payment_method,
+        "status": status,
+        "initial_payment_date": initial_payment_date,
+        "next_payment_date": next_payment_date,
+        **kwargs,
+    }
+
+    return Subscription(**subscription_data)
+
+
+def save_subscription(db_session: Session, subscription: Subscription) -> Subscription:
+    """
+    Save a subscription to the database.
+
+    Args:
+        db_session: Database session.
+        subscription: Subscription instance to save.
+
+    Returns:
+        Subscription: Saved subscription with ID assigned.
+    """
+    db_session.add(subscription)
+    db_session.commit()
+    db_session.refresh(subscription)
+    return subscription
+
+
+def make_and_save_subscription(
+    db_session: Session, user_id: Optional[int] = None, **kwargs,
+) -> Subscription:
+    """
+    Create and save a subscription in one step.
+
+    Args:
+        db_session: Database session.
+        user_id: User ID. If None, creates a new user.
+        **kwargs: Subscription attributes (passed to make_subscription).
+
+    Returns:
+        Subscription: Created and saved subscription.
+    """
+    if user_id is None:
+        user = make_and_save_user(db_session)
+        user_id = user.user_id
+
+    subscription = make_subscription(user_id=user_id, **kwargs)
+    return save_subscription(db_session, subscription)
+
+
+def make_label(
+    user_id: int,
+    name: str = "Test Label",
+    color: str = "#FF6B6B",
+    parent_id: Optional[int] = None,
+    system_label: bool = False,
+    **kwargs,
+) -> Label:
+    """
+    Create a Label instance for testing.
+
+    Args:
+        user_id: ID of the user who owns the label.
+        name: Label name.
+        color: Label color in hex format.
+        parent_id: Parent label ID for hierarchy.
+        system_label: Whether this is a system label.
+        **kwargs: Additional label attributes.
+
+    Returns:
+        Label: Label instance ready for testing.
+    """
+    label_data = {
+        "user_id": user_id,
+        "name": name,
+        "color": color,
+        "parent_id": parent_id,
+        "system_label": system_label,
+        **kwargs,
+    }
+
+    return Label(**label_data)
+
+
+def save_label(db_session: Session, label: Label) -> Label:
+    """
+    Save a label to the database.
+
+    Args:
+        db_session: Database session.
+        label: Label instance to save.
+
+    Returns:
+        Label: Saved label with ID assigned.
+    """
+    db_session.add(label)
+    db_session.commit()
+    db_session.refresh(label)
+    return label
+
+
+def make_and_save_label(
+    db_session: Session, user_id: Optional[int] = None, **kwargs,
+) -> Label:
+    """
+    Create and save a label in one step.
+
+    Args:
+        db_session: Database session.
+        user_id: User ID. If None, creates a new user.
+        **kwargs: Label attributes (passed to make_label).
+
+    Returns:
+        Label: Created and saved label.
+    """
+    if user_id is None:
+        user = make_and_save_user(db_session)
+        user_id = user.user_id
+
+    label = make_label(user_id=user_id, **kwargs)
+    return save_label(db_session, label)
+
+
+def create_label_hierarchy(
+    db_session: Session,
+    user_id: int,
+    levels: list[tuple[str, str]],
+) -> list[Label]:
+    """
+    Create a hierarchy of labels for testing.
+
+    Args:
+        db_session: Database session.
+        user_id: User ID who owns the labels.
+        levels: List of (name, color) tuples for each level.
+
+    Returns:
+        list[Label]: List of created labels in hierarchical order.
+
+    Example:
+        labels = create_label_hierarchy(
+            db_session, user_id,
+            [("Root", "#FF0000"), ("Child", "#00FF00"), ("Grandchild", "#0000FF")]
+        )
+    """
+    labels = []
+    parent_id = None
+
+    for name, color in levels:
+        label = make_and_save_label(
+            db_session,
+            user_id=user_id,
+            name=name,
+            color=color,
+            parent_id=parent_id,
+        )
+        labels.append(label)
+        parent_id = label.label_id
+
+    return labels
 
 
 def make_access_token(
@@ -234,6 +446,48 @@ def assert_user_matches(user: User, expected_data: dict) -> None:
         assert user.user_id == expected_data["user_id"]
 
 
+def assert_subscription_matches(
+    subscription: Subscription, expected_data: dict,
+) -> None:
+    """
+    Assert that a subscription matches expected data.
+
+    Args:
+        subscription: Subscription instance to check.
+        expected_data: Expected subscription data.
+    """
+    if "name" in expected_data:
+        assert subscription.name == expected_data["name"]
+    if "price" in expected_data:
+        assert subscription.price == expected_data["price"]
+    if "currency" in expected_data:
+        assert subscription.currency == expected_data["currency"]
+    if "status" in expected_data:
+        assert subscription.status == expected_data["status"]
+    if "user_id" in expected_data:
+        assert subscription.user_id == expected_data["user_id"]
+
+
+def assert_label_matches(label: Label, expected_data: dict) -> None:
+    """
+    Assert that a label matches expected data.
+
+    Args:
+        label: Label instance to check.
+        expected_data: Expected label data.
+    """
+    if "name" in expected_data:
+        assert label.name == expected_data["name"]
+    if "color" in expected_data:
+        assert label.color == expected_data["color"]
+    if "user_id" in expected_data:
+        assert label.user_id == expected_data["user_id"]
+    if "parent_id" in expected_data:
+        assert label.parent_id == expected_data["parent_id"]
+    if "system_label" in expected_data:
+        assert label.system_label == expected_data["system_label"]
+
+
 def assert_success_response(response: Response, expected_status: int = 200) -> dict:
     """
     Assert that a response is successful and return JSON data.
@@ -296,7 +550,19 @@ def clean_database(db_session: Session) -> None:
     """
     try:
         # Delete in reverse order of dependencies
+        # First remove many-to-many relationships
+        from app.models.association_tables import subscription_labels
+
+        db_session.execute(subscription_labels.delete())
+
+        # Then remove dependent entities
+        from app.models.label import Label
+        from app.models.subscription import Subscription
+
+        db_session.query(Subscription).delete()
+        db_session.query(Label).delete()
         db_session.query(User).delete()
+
         db_session.commit()
     except Exception:
         db_session.rollback()
