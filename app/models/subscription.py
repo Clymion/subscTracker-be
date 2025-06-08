@@ -8,7 +8,7 @@ relationships, and business logic methods for subscription management.
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import REAL, Date, DateTime, Integer, String, Text
+from sqlalchemy import REAL, Date, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -74,6 +74,16 @@ class Subscription(db.Model):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    # Composite indexes for optimized queries
+    __table_args__ = (
+        # User + Status composite index for filtering
+        Index("idx_subscriptions_user_status", "user_id", "status"),
+        # Pagination indexes for different sorting options
+        Index("idx_subscriptions_pagination", "user_id", "created_at"),
+        Index("idx_subscriptions_pagination_name", "user_id", "name"),
+        Index("idx_subscriptions_pagination_price", "user_id", "price"),
     )
 
     # Relationships
