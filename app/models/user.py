@@ -24,15 +24,22 @@ class User(db.Model):
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False,
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False,
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
     )
 
     # Relationships
     subscriptions = relationship(
-        "Subscription", back_populates="user", cascade="all, delete-orphan",
+        "Subscription",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
     labels = relationship("Label", back_populates="user", cascade="all, delete-orphan")
 
