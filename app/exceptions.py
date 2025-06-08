@@ -29,3 +29,27 @@ class ValidationError(SubscriptionError):
     """一般的なバリデーションエラーが発生した場合の例外。"""
 
     pass
+
+
+class LabelError(Exception):
+    """ラベル関連操作の基底例外クラス。"""
+
+    pass
+
+
+class LabelNotFoundError(LabelError):
+    """指定されたラベルが見つからない場合に発生する例外。"""
+
+    pass
+
+
+class DuplicateLabelError(LabelError):
+    """重複したラベルを作成しようとした場合に発生する例外。"""
+
+    pass
+
+
+class LabelHierarchyError(LabelError):
+    """循環参照や深さ制限など、階層構造に関するエラーの例外。"""
+
+    pass

@@ -173,6 +173,7 @@ class ErrorMessages:
         "Next payment date cannot be before initial payment date"
     )
     UNKNOWN_PAYMENT_FREQUENCY = "Unknown payment frequency"
+    CANNOT_DELETE_LABEL_WITH_CHILDREN = "Cannot delete a label that has child labels"
 
     # Label errors
     LABEL_NOT_FOUND = "Label not found"

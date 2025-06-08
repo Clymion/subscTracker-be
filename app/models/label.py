@@ -107,6 +107,19 @@ class Label(db.Model):
         """Human-readable string representation."""
         return self.name
 
+    def to_dict(self) -> dict[str, str | int | bool]:
+        """Convert label to dictionary representation."""
+        return {
+            "label_id": self.label_id,
+            "user_id": self.user_id,
+            "parent_id": self.parent_id,
+            "name": self.name,
+            "color": self.color,
+            "system_label": self.system_label,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
     # Validation methods
     def validate_name(self) -> None:
         """Validate that name is provided and not too long."""
@@ -178,6 +191,16 @@ class Label(db.Model):
             if depth > LabelConstants.MAX_HIERARCHY_DEPTH:
                 break  # Safety check to prevent infinite loops
         return depth
+
+    def get_subtree_height(self) -> int:
+        """
+        このラベルを頂点とするサブツリーの高さを計算する
+
+        子がなければ0を返す
+        """
+        if not self.children:
+            return 0
+        return 1 + max(child.get_subtree_height() for child in self.children)
 
     def get_full_path(self) -> str:
         """Get hierarchical path (e.g., 'Parent > Child > Grandchild')."""
