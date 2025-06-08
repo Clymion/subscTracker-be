@@ -46,7 +46,7 @@ class SubscriptionRepository:
         self,
         user_id: int,
         filters: dict[str, Any],
-        sort_by: str,
+        sort_by: str | None,  # Noneを許容するように型ヒントを修正
         sort_order: str,
         limit: int,
         offset: int,
@@ -65,7 +65,9 @@ class SubscriptionRepository:
             )
 
         # Apply sorting
-        sort_column = getattr(Subscription, sort_by, Subscription.created_at)
+        sort_key = sort_by or "created_at"
+        sort_column = getattr(Subscription, sort_key, Subscription.created_at)
+
         if sort_order == "desc":
             query = query.order_by(desc(sort_column))
         else:

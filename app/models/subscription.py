@@ -19,6 +19,7 @@ from app.constants import (
     SubscriptionStatus,
 )
 from app.models import db
+from app.models.label import Label  # Labelをインポート
 
 
 class Subscription(db.Model):
@@ -88,7 +89,7 @@ class Subscription(db.Model):
 
     # Relationships
     user = relationship("User", back_populates="subscriptions")
-    labels = relationship(
+    labels: Mapped[list["Label"]] = relationship(
         "Label",
         secondary="subscription_labels",
         back_populates="subscriptions",
@@ -102,6 +103,27 @@ class Subscription(db.Model):
     def __str__(self) -> str:
         """Human-readable string representation."""
         return f"{self.name} ({self.status})"
+
+    def to_dict(self) -> dict:
+        """サブスクリプションオブジェクトを辞書に変換するのだ。"""
+        return {
+            "subscription_id": self.subscription_id,
+            "user_id": self.user_id,
+            "name": self.name,
+            "price": self.price,
+            "currency": self.currency,
+            "initial_payment_date": self.initial_payment_date.isoformat(),
+            "next_payment_date": self.next_payment_date.isoformat(),
+            "payment_frequency": self.payment_frequency,
+            "payment_method": self.payment_method,
+            "status": self.status,
+            "url": self.url,
+            "notes": self.notes,
+            "image_url": self.image_url,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "labels": [label.to_dict() for label in self.labels],
+        }
 
     # Validation methods
     def validate_currency(self) -> None:

@@ -19,6 +19,12 @@ class SubscriptionNotFoundError(SubscriptionError):
     pass
 
 
+class SubscriptionAccessDenied(SubscriptionError):
+    """サブスクリプションへのアクセス権がない場合に発生する例外。"""
+
+    pass
+
+
 class DuplicateSubscriptionError(SubscriptionError):
     """重複したサブスクリプションを作成しようとした場合に発生する例外。"""
 
