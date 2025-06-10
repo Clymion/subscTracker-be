@@ -55,9 +55,21 @@ class LabelService:
             "usage_count": usage_count,
         }  # to_dict()はLabelモデルに要実装
 
-    def get_labels_by_user_with_usage(self, user_id: int) -> list[dict[str, Any]]:
-        """Get all labels for a user with their usage counts."""
-        results = self.label_repository.find_all_by_user_id_with_usage(user_id)
+    def get_labels_by_user_with_usage(
+        self,
+        user_id: int,
+        parent_id: int | None = None,
+        filter_root_labels: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Get all labels for a user with their usage counts, optionally filtered by parent_id."""
+        if parent_id is not None or filter_root_labels:
+            # parent_idが指定されている場合、またはルートレベルのラベルのみを取得する場合
+            results = self.label_repository.find_all_by_user_id_with_usage_filtered(
+                user_id, parent_id,
+            )
+        else:
+            # parent_idがNoneの場合は、子も含めて全てのラベルを取得
+            results = self.label_repository.find_all_by_user_id_with_usage(user_id)
         return [
             {**label.to_dict(), "usage_count": usage_count}
             for label, usage_count in results
@@ -135,7 +147,9 @@ class LabelService:
             name = data["name"]
             # 現在の親IDで重複をチェック
             existing = self.label_repository.find_by_user_and_name_and_parent(
-                user_id, name, label.parent_id,
+                user_id,
+                name,
+                label.parent_id,
             )
             if existing and existing.label_id != label_id:
                 raise DuplicateLabelError(ErrorMessages.DUPLICATE_LABEL)

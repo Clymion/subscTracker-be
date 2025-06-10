@@ -1,8 +1,8 @@
 """
-Subscription APIのエンドポイントを定義するモジュールなのだ。
+Subscription APIのエンドポイントを定義するモジュール
 
 このファイルでは、サブスクリプションのCRUD操作に関連する
-RESTful APIエンドポイントをFlask Blueprintを使って作成するのだ。
+RESTful APIエンドポイントをFlask Blueprintを使って作成する
 """
 
 from datetime import datetime
@@ -30,7 +30,7 @@ subscription_service = SubscriptionService(session=db.session)
 @subscription_bp.route("/subscriptions", methods=["GET"])
 @jwt_required_custom
 def get_subscriptions() -> tuple[Response, int]:
-    """認証済みユーザーのサブスクリプション一覧を取得するのだ。"""
+    """認証済みユーザーのサブスクリプション一覧を取得する"""
     user_id = get_jwt_identity()
 
     # 現時点では、フィルタリングやソート、ページネーションは実装しない
@@ -50,7 +50,7 @@ def get_subscriptions() -> tuple[Response, int]:
 @subscription_bp.route("/subscriptions", methods=["POST"])
 @jwt_required_custom
 def create_subscription() -> tuple[Response, int]:
-    """新しいサブスクリプションを作成するのだ。"""
+    """新しいサブスクリプションを作成する"""
     user_id = get_jwt_identity()
     data = request.get_json()
 
@@ -108,11 +108,12 @@ def create_subscription() -> tuple[Response, int]:
 @subscription_bp.route("/subscriptions/<int:subscription_id>", methods=["GET"])
 @jwt_required_custom
 def get_subscription_by_id(subscription_id: int) -> tuple[Response, int]:
-    """指定されたIDのサブスクリプション詳細を取得するのだ。"""
+    """指定されたIDのサブスクリプション詳細を取得する"""
     user_id = get_jwt_identity()
     try:
         subscription = subscription_service.get_subscription(
-            user_id=int(user_id), subscription_id=subscription_id,
+            user_id=int(user_id),
+            subscription_id=subscription_id,
         )
         return jsonify({"data": subscription.to_dict()}), 200
     except SubscriptionNotFoundError as e:
@@ -124,7 +125,7 @@ def get_subscription_by_id(subscription_id: int) -> tuple[Response, int]:
 @subscription_bp.route("/subscriptions/<int:subscription_id>", methods=["PUT"])
 @jwt_required_custom
 def update_subscription(subscription_id: int) -> tuple[Response, int]:
-    """指定されたIDのサブスクリプションを更新するのだ。"""
+    """指定されたIDのサブスクリプションを更新する"""
     user_id = get_jwt_identity()
     data = request.get_json()
     if not data:
@@ -132,7 +133,9 @@ def update_subscription(subscription_id: int) -> tuple[Response, int]:
 
     try:
         updated_subscription = subscription_service.update_subscription(
-            user_id=int(user_id), subscription_id=subscription_id, data=data,
+            user_id=int(user_id),
+            subscription_id=subscription_id,
+            data=data,
         )
         return jsonify({"data": updated_subscription.to_dict()}), 200
     except SubscriptionNotFoundError as e:
@@ -146,11 +149,12 @@ def update_subscription(subscription_id: int) -> tuple[Response, int]:
 @subscription_bp.route("/subscriptions/<int:subscription_id>", methods=["DELETE"])
 @jwt_required_custom
 def delete_subscription(subscription_id: int) -> tuple[Response, int]:
-    """指定されたIDのサブスクリプションを削除するのだ。"""
+    """指定されたIDのサブスクリプションを削除する"""
     user_id = get_jwt_identity()
     try:
         subscription_service.delete_subscription(
-            user_id=int(user_id), subscription_id=subscription_id,
+            user_id=int(user_id),
+            subscription_id=subscription_id,
         )
         return "", 204
     except SubscriptionNotFoundError as e:

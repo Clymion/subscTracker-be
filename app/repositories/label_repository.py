@@ -1,7 +1,7 @@
 """Repository for label data access logic."""
 
 from sqlalchemy import func
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session
 
 from app.models.association_tables import subscription_labels
 from app.models.label import Label
@@ -35,7 +35,10 @@ class LabelRepository:
         return result if result else None
 
     def find_by_user_and_name_and_parent(
-        self, user_id: int, name: str, parent_id: int | None,
+        self,
+        user_id: int,
+        name: str,
+        parent_id: int | None,
     ) -> Label | None:
         """Find a label by user, name (case-insensitive), and parent."""
         return (
@@ -49,25 +52,72 @@ class LabelRepository:
         )
 
     def find_all_by_user_id(
-        self, user_id: int, parent_id: int | None = None,
+        self,
+        user_id: int,
+        parent_id: int | None = None,
     ) -> list[Label]:
         """Find all labels for a user, optionally filtered by parent."""
         query = self.session.query(Label).filter_by(user_id=user_id)
+
+        # parent_id によるフィルタリング
         if parent_id is not None:
-            query = query.filter_by(parent_id=parent_id)
+            if parent_id == "null":
+                # ルートレベルのラベルのみ
+                query = query.filter(Label.parent_id.is_(None))
+            else:
+                # 特定の親IDでフィルタリング
+                query = query.filter_by(parent_id=parent_id)
+        # parent_id が指定されていない場合は全ラベルを返す
+
         # 階層構造と名前でソート
         return query.order_by(Label.parent_id.is_(None).desc(), Label.name).all()
 
-    def find_all_by_user_id_with_usage(self, user_id: int) -> list[tuple[Label, int]]:
-        """Find all user labels and include their usage counts."""
-        return (
+    def find_all_by_user_id_with_usage_filtered(
+        self,
+        user_id: int,
+        parent_id: int | None = None,
+    ) -> list[tuple[Label, int]]:
+        """
+        Find all user labels and include their usage counts filtered by parent_id.
+
+        Args:
+            user_id: User ID to filter by
+            parent_id: Parent ID to filter by (None means root level)
+        """
+        query = (
             self.session.query(Label, func.count(subscription_labels.c.subscription_id))
             .outerjoin(subscription_labels)
             .filter(Label.user_id == user_id)
             .group_by(Label.label_id)
-            .order_by(Label.parent_id.is_(None).desc(), Label.name)
-            .all()
         )
+
+        if parent_id is None:
+            # ルートレベル(親なし)のラベルのみ
+            query = query.filter(Label.parent_id.is_(None))
+        else:
+            # 特定の親IDでフィルタリング
+            query = query.filter(Label.parent_id == parent_id)
+
+        return query.order_by(Label.parent_id.is_(None).desc(), Label.name).all()
+
+    def find_all_by_user_id_with_usage(
+        self,
+        user_id: int,
+    ) -> list[tuple[Label, int]]:
+        """
+        Find all user labels and include their usage counts without parent filtering.
+
+        Args:
+            user_id: User ID to filter by
+        """
+        query = (
+            self.session.query(Label, func.count(subscription_labels.c.subscription_id))
+            .outerjoin(subscription_labels)
+            .filter(Label.user_id == user_id)
+            .group_by(Label.label_id)
+        )
+
+        return query.order_by(Label.parent_id.is_(None).desc(), Label.name).all()
 
     def save(self, label: Label) -> Label:
         """Save a label (create or update)."""

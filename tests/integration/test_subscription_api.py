@@ -127,7 +127,7 @@ class TestGetSubscriptionsAPI:
 
     def test_get_subscriptions_unauthorized_without_token(self, client: FlaskClient):
         """
-        [異常系] GET /subscriptions: 認証トークンがない場合は401エラーを返すのだ。
+        [異常系] GET /subscriptions: 認証トークンがない場合は401エラーを返す
         """
         # Act
         response = client.get("/api/v1/subscriptions")
@@ -220,7 +220,7 @@ class TestCreateSubscriptionAPI:
         authenticated_user: dict,
     ):
         """
-        [異常系] POST /subscriptions: 価格が0以下の場合は400エラーを返すのだ。
+        [異常系] POST /subscriptions: 価格が0以下の場合は400エラーを返す
         """
         # Arrange
         headers = authenticated_user["headers"]
@@ -250,7 +250,7 @@ class TestCreateSubscriptionAPI:
         authenticated_user: dict,
     ):
         """
-        [異常系] POST /subscriptions: 必須フィールドが欠けている場合は400エラーを返すのだ。
+        [異常系] POST /subscriptions: 必須フィールドが欠けている場合は400エラーを返す
         """
         # Arrange
         headers = authenticated_user["headers"]

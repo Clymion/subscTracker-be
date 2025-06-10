@@ -560,7 +560,7 @@ class TestLabelServiceUsage:
         assert results[1]["name"] == "Unused Label"
         assert results[1]["usage_count"] == 0
         mock_label_repo.find_all_by_user_id_with_usage.assert_called_once_with(
-            user.user_id,
+            user.user_id
         )
 
     def test_delete_label_updates_subscription_relationships(

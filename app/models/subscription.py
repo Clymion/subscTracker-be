@@ -105,7 +105,7 @@ class Subscription(db.Model):
         return f"{self.name} ({self.status})"
 
     def to_dict(self) -> dict:
-        """サブスクリプションオブジェクトを辞書に変換するのだ。"""
+        """サブスクリプションオブジェクトを辞書に変換する"""
         return {
             "subscription_id": self.subscription_id,
             "user_id": self.user_id,
@@ -167,25 +167,23 @@ class Subscription(db.Model):
         """Calculate monthly cost based on payment frequency."""
         if self.payment_frequency == PaymentFrequency.MONTHLY:
             return self.price
-        elif self.payment_frequency == PaymentFrequency.QUARTERLY:
+        if self.payment_frequency == PaymentFrequency.QUARTERLY:
             return self.price / 3
-        elif self.payment_frequency == PaymentFrequency.YEARLY:
+        if self.payment_frequency == PaymentFrequency.YEARLY:
             return self.price / 12
-        else:
-            msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
-            raise ValueError(msg)
+        msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
+        raise ValueError(msg)
 
     def yearly_cost(self) -> float:
         """Calculate yearly cost based on payment frequency."""
         if self.payment_frequency == PaymentFrequency.MONTHLY:
             return self.price * 12
-        elif self.payment_frequency == PaymentFrequency.QUARTERLY:
+        if self.payment_frequency == PaymentFrequency.QUARTERLY:
             return self.price * 4
-        elif self.payment_frequency == PaymentFrequency.YEARLY:
+        if self.payment_frequency == PaymentFrequency.YEARLY:
             return self.price
-        else:
-            msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
-            raise ValueError(msg)
+        msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
+        raise ValueError(msg)
 
     def calculate_next_payment_date(self, from_date: Optional[date] = None) -> date:
         """
@@ -202,13 +200,12 @@ class Subscription(db.Model):
 
         if self.payment_frequency == PaymentFrequency.MONTHLY:
             return self._add_months(from_date, 1)
-        elif self.payment_frequency == PaymentFrequency.QUARTERLY:
+        if self.payment_frequency == PaymentFrequency.QUARTERLY:
             return self._add_months(from_date, 3)
-        elif self.payment_frequency == PaymentFrequency.YEARLY:
+        if self.payment_frequency == PaymentFrequency.YEARLY:
             return self._add_months(from_date, 12)
-        else:
-            msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
-            raise ValueError(msg)
+        msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
+        raise ValueError(msg)
 
     def _add_months(self, start_date: date, months: int) -> date:
         """
