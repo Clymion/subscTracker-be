@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from app.constants import ErrorMessages
 from app.exceptions import (
     DuplicateSubscriptionError,
-    SubscriptionAccessDenied,
     SubscriptionNotFoundError,
     ValidationError,
 )
@@ -41,10 +40,8 @@ class SubscriptionService:
             SubscriptionNotFoundError: If subscription not found or user does not have permission.
         """
         subscription = self.subscription_repository.find_by_id(subscription_id)
-        if not subscription:
+        if not subscription or subscription.user_id != user_id:
             raise SubscriptionNotFoundError(ErrorMessages.SUBSCRIPTION_NOT_FOUND)
-        if subscription.user_id != user_id:
-            raise SubscriptionAccessDenied(ErrorMessages.FORBIDDEN)
         return subscription
 
     def get_subscriptions_by_user(

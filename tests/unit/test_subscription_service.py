@@ -8,7 +8,7 @@ docs/test-list/subscription-service.md.
 
 from collections.abc import Generator
 from datetime import date
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
@@ -222,10 +222,14 @@ class TestSubscriptionServiceGet:
         """
         # Arrange
         owner_user = make_and_save_user(
-            clean_db, username="owner", email="owner@test.com",
+            clean_db,
+            username="owner",
+            email="owner@test.com",
         )
         other_user = make_and_save_user(
-            clean_db, username="other", email="other@test.com",
+            clean_db,
+            username="other",
+            email="other@test.com",
         )
         subscription = make_and_save_subscription(clean_db, user_id=owner_user.user_id)
         mock_subscription_repo.find_by_id.return_value = subscription
@@ -260,7 +264,12 @@ class TestSubscriptionServiceGet:
         # Assert
         assert len(result) == 2
         mock_subscription_repo.find_all_by_user_id.assert_called_once_with(
-            user.user_id, {}, None, "asc", 100, 0,
+            user.user_id,
+            {},
+            None,
+            "asc",
+            100,
+            0,
         )
 
 
@@ -405,10 +414,14 @@ class TestSubscriptionServiceDelete:
         """
         # Arrange
         owner_user = make_and_save_user(
-            clean_db, username="owner", email="owner@test.com",
+            clean_db,
+            username="owner",
+            email="owner@test.com",
         )
         other_user = make_and_save_user(
-            clean_db, username="other", email="other@test.com",
+            clean_db,
+            username="other",
+            email="other@test.com",
         )
         subscription = make_subscription(user_id=owner_user.user_id)
         mock_subscription_repo.find_by_id.return_value = subscription

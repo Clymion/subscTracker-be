@@ -93,7 +93,7 @@ RESTful API endpoints for subscription management with authentication, authoriza
 #### GET /api/v1/subscriptions/{id} - Get Subscription Details
 - [ ] Test returns 200 and subscription details for valid ID
 - [ ] Test returns 404 for non-existent subscription ID
-- [ ] Test returns 403 when accessing other user's subscription
+- [ ] Test returns 404 when accessing other user's subscription
 - [ ] Test response includes all subscription fields
 - [ ] Test response includes related labels
 - [ ] Test response format matches OpenAPI specification
@@ -105,7 +105,7 @@ RESTful API endpoints for subscription management with authentication, authoriza
 - [ ] Test next_payment_date recalculated when frequency changes (smart month-end)
 - [ ] Test duplicate name validation works (case-insensitive, per-user)
 - [ ] Test returns 404 for non-existent subscription
-- [ ] Test returns 403 when updating other user's subscription
+- [ ] Test returns 404 when updating other user's subscription
 - [ ] Test invalid field values return 400
 - [ ] Test any valid status can be set (user-driven, no transition rules)
 - [ ] Test status can be changed from any status to any valid status
@@ -116,7 +116,7 @@ RESTful API endpoints for subscription management with authentication, authoriza
 - [ ] Test deletes subscription returns 204 (hard deletion)
 - [ ] Test subscription is completely removed from database
 - [ ] Test returns 404 for non-existent subscription
-- [ ] Test returns 403 when deleting other user's subscription
+- [ ] Test returns 404 when deleting other user's subscription
 - [ ] Test handles related data appropriately (cascade label relationships)
 
 ### API Response Format Tests

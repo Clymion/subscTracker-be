@@ -323,7 +323,7 @@ class TestGetSubscriptionDetailAPI:
         # Assert
         assert_error_response(response, 404, ErrorMessages.SUBSCRIPTION_NOT_FOUND)
 
-    def test_get_subscription_by_id_returns_403_for_other_users_sub(
+    def test_get_subscription_by_id_returns_404_for_other_users_sub(
         self,
         client: FlaskClient,
         user_with_subscriptions: dict,
@@ -331,7 +331,7 @@ class TestGetSubscriptionDetailAPI:
         """
         [異常系] GET /subscriptions/{id}:
 
-        他のユーザーのサブスクリプションIDを指定した場合、403エラーが返ってくる
+        他のユーザーのサブスクリプションIDを指定した場合、404エラーが返ってくる
         """
         # Arrange
         headers = user_with_subscriptions["headers"]
@@ -343,9 +343,7 @@ class TestGetSubscriptionDetailAPI:
         response = client.get(f"/api/v1/subscriptions/{other_sub_id}", headers=headers)
 
         # Assert
-        # サービス側で「見つからない(404)」と「権限がない(403)」を区別させない設計も一般的
-        # ここではテストリストに従い、403を期待する
-        assert_error_response(response, 403, ErrorMessages.FORBIDDEN)
+        assert_error_response(response, 404, ErrorMessages.SUBSCRIPTION_NOT_FOUND)
 
 
 @pytest.mark.api
@@ -384,7 +382,7 @@ class TestUpdateSubscriptionAPI:
         assert updated_sub["price"] == 20.50
         assert updated_sub["status"] == "suspended"
 
-    def test_update_subscription_returns_403_for_other_users_sub(
+    def test_update_subscription_returns_404_for_other_users_sub(
         self,
         client: FlaskClient,
         user_with_subscriptions: dict,
@@ -406,7 +404,7 @@ class TestUpdateSubscriptionAPI:
         )
 
         # Assert
-        assert_error_response(response, 403, ErrorMessages.FORBIDDEN)
+        assert_error_response(response, 404, ErrorMessages.SUBSCRIPTION_NOT_FOUND)
 
 
 @pytest.mark.api
@@ -462,7 +460,7 @@ class TestDeleteSubscriptionAPI:
         # Assert
         assert_error_response(response, 404, ErrorMessages.SUBSCRIPTION_NOT_FOUND)
 
-    def test_delete_subscription_returns_403_for_other_users_sub(
+    def test_delete_subscription_returns_404_for_other_users_sub(
         self,
         client: FlaskClient,
         user_with_subscriptions: dict,
@@ -482,4 +480,4 @@ class TestDeleteSubscriptionAPI:
         )
 
         # Assert
-        assert_error_response(response, 403, ErrorMessages.FORBIDDEN)
+        assert_error_response(response, 404, ErrorMessages.SUBSCRIPTION_NOT_FOUND)
