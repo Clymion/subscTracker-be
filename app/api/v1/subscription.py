@@ -131,6 +131,25 @@ def update_subscription(subscription_id: int) -> tuple[Response, int]:
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
 
+    # 日付文字列をdateオブジェクトに変換する処理を追加するのだ
+    if "initial_payment_date" in data and isinstance(data["initial_payment_date"], str):
+        try:
+            data["initial_payment_date"] = datetime.fromisoformat(
+                data["initial_payment_date"],
+            ).date()
+        except (ValueError, TypeError):
+            return (
+                jsonify(
+                    {
+                        "error": {
+                            "code": 400,
+                            "message": "Invalid date format for initial_payment_date",
+                        },
+                    },
+                ),
+                400,
+            )
+
     try:
         updated_subscription = subscription_service.update_subscription(
             user_id=int(user_id),

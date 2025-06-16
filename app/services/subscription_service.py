@@ -15,7 +15,13 @@ from app.exceptions import (
     SubscriptionNotFoundError,
     ValidationError,
 )
+
+# LabelモデルとLabelNotFoundErrorをインポートするのだ
+from app.models.label import Label
 from app.models.subscription import Subscription
+from app.repositories.label_repository import (
+    LabelRepository,
+)  # ラベルリポジトリもインポート
 from app.repositories.subscription_repository import SubscriptionRepository
 
 
@@ -31,6 +37,8 @@ class SubscriptionService:
         """
         self.session = session
         self.subscription_repository = SubscriptionRepository(session)
+        # LabelRepositoryも初期化する
+        self.label_repository = LabelRepository(session)
 
     def get_subscription(self, user_id: int, subscription_id: int) -> Subscription:
         """
@@ -111,6 +119,19 @@ class SubscriptionService:
         """
         subscription = self.get_subscription(user_id, subscription_id)
 
+        # ラベルの更新を先に処理する
+        if "labels" in data:
+            label_ids = data.pop("labels", [])
+            new_labels = []
+            for label_id in label_ids:
+                label = self.label_repository.find_by_id(label_id)
+                if not label or label.user_id != user_id:
+                    raise ValidationError(
+                        f"Label with ID {label_id} not found or access denied."
+                    )
+                new_labels.append(label)
+            subscription.labels = new_labels
+
         # 新しい名前が他のサブスクリプションと重複しないかチェック
         new_name = data.get("name")
         if new_name and new_name.lower() != subscription.name.lower():
@@ -121,7 +142,7 @@ class SubscriptionService:
             if existing and existing.subscription_id != subscription_id:
                 raise DuplicateSubscriptionError(ErrorMessages.DUPLICATE_SUBSCRIPTION)
 
-        # データを更新
+        # 残りのデータを更新
         for key, value in data.items():
             if hasattr(subscription, key):
                 setattr(subscription, key, value)

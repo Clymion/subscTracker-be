@@ -30,3 +30,5 @@ MANIFEST
 logs/*
 instance/*
 repomix-output.xml
+.env
+*.env
