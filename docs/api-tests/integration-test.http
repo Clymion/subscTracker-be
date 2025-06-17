@@ -1,0 +1,226 @@
+# REST Client for VSCode
+# API Integration Test Scenarios
+
+# ----------------------------------------
+# 変数定義
+# ----------------------------------------
+@host = http://localhost:5000
+@email = testuser1@example.com
+@password = StrongPassword123!
+@username = testuser1
+
+@accessToken =
+@refreshToken =
+@userId =
+
+@labelId_parent =
+@labelId_child =
+@subscriptionId =
+
+###
+# ========================================
+# 1. 認証フロー (Authentication Flow)
+# ========================================
+
+### 1.1. ユーザー新規登録
+# @name register
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "confirm_password": "{{password}}",
+  "base_currency": "JPY"
+}
+
+###
+# レスポンスからトークンとユーザーIDを保存
+@accessToken = {{register.response.body.token}}
+@refreshToken = {{register.response.body.refresh_token}}
+@userId = {{register.response.body.user.id}}
+
+### 1.2. ログイン
+# 登録した情報でログインし、新しいトークンを取得
+# @name login
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# レスポンスからトークンを更新
+@accessToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refresh_token}}
+
+### 1.3. トークンのリフレッシュ
+# リフレッシュトークンを使って、アクセストークンを更新
+# @name refresh
+POST {{host}}/api/v1/auth/refresh
+Authorization: Bearer {{refreshToken}}
+
+###
+# レスポンスからアクセストークンを更新
+@accessToken = {{refresh.response.body.data.access_token}}
+
+
+###
+# ========================================
+# 2. ラベル管理フロー (Label Management)
+# ========================================
+
+### 2.1. ラベルの作成 (親ラベル)
+# @name createParentLabel
+POST {{host}}/api/v1/labels
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "仕事用",
+  "color": "#337BFF"
+}
+
+###
+@labelId_parent = {{createParentLabel.response.body.data.label_id}}
+
+### 2.2. ラベルの作成 (子ラベル)
+# @name createChildLabel
+POST {{host}}/api/v1/labels
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "プロジェクトA",
+  "color": "#33C4FF",
+  "parent_id": {{labelId_parent}}
+}
+
+###
+@labelId_child = {{createChildLabel.response.body.data.label_id}}
+
+
+### 2.3. ラベル一覧の取得 (全件)
+GET {{host}}/api/v1/labels
+Authorization: Bearer {{accessToken}}
+
+###
+### 2.4. ラベル一覧の取得 (親なしのルートラベルのみ)
+# @name getRootLabels
+GET {{host}}/api/v1/labels?parent_id=null
+Authorization: Bearer {{accessToken}}
+
+@labelId_parent = {{getRootLabels.response.body.data.labels[0].label_id}}
+
+### 2.5. ラベル一覧の取得 (親ID指定)
+# @name getChildLabels
+GET {{host}}/api/v1/labels?parent_id={{labelId_parent}}
+Authorization: Bearer {{accessToken}}
+
+@labelId_child = {{getChildLabels.response.body.data.labels[0].label_id}}
+
+###
+### 2.6. ラベル詳細の取得
+GET {{host}}/api/v1/labels/{{labelId_parent}}
+Authorization: Bearer {{accessToken}}
+
+
+### 2.7. ラベルの更新
+PUT {{host}}/api/v1/labels/{{labelId_parent}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "仕事用 (更新済み)",
+  "color": "#FF5733"
+}
+
+
+###
+# ========================================
+# 3. サブスクリプション管理フロー (Subscription Management)
+# ========================================
+
+### 3.1. サブスクリプションの作成
+# @name createSubscription
+POST {{host}}/api/v1/subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Netflix",
+  "price": 1980,
+  "currency": "JPY",
+  "initial_payment_date": "2024-01-15",
+  "payment_frequency": "monthly",
+  "payment_method": "credit_card",
+  "status": "active",
+  "url": "https://www.netflix.com",
+  "notes": "プレミアムプラン"
+}
+
+###
+@subscriptionId = {{createSubscription.response.body.data.subscription_id}}
+
+
+### 3.2. サブスクリプション一覧の取得
+# @name getSubscriptions
+GET {{host}}/api/v1/subscriptions
+Authorization: Bearer {{accessToken}}
+
+@subscriptionId = {{getSubscriptions.response.body.data.subscriptions[0].subscription_id}}
+
+### 3.3. サブスクリプション詳細の取得
+GET {{host}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{accessToken}}
+
+
+### 3.4. サブスクリプションの更新
+# 作成したサブスクリプションに、先ほど作成したラベルを紐付ける
+PUT {{host}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Netflix (Family Plan)",
+  "price": 2500,
+  "status": "active",
+  "labels": ["{{labelId_child}}"]
+}
+
+
+### 3.5. サブスクリプションの削除
+DELETE {{host}}/api/v1/subscriptions/{{subscriptionId}}
+Authorization: Bearer {{accessToken}}
+
+
+###
+# ========================================
+# 4. 後片付け (Cleanup)
+# ========================================
+
+### 4.1. ラベルの削除 (子 → 親の順番)
+DELETE {{host}}/api/v1/labels/{{labelId_child}}
+Authorization: Bearer {{accessToken}}
+
+###
+DELETE {{host}}/api/v1/labels/{{labelId_parent}}
+Authorization: Bearer {{accessToken}}
+
+
+###
+# ========================================
+# 5. 異常系テスト (Error Cases)
+# ========================================
+
+### 5.1. 認証トークンなしでのアクセス
+GET {{host}}/api/v1/labels
+Content-Type: application/json
+
+### 5.2. 間違ったトークンでのアクセス
+GET {{host}}/api/v1/subscriptions
+Authorization: Bearer invalid-token
+Content-Type: application/json

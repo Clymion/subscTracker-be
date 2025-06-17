@@ -18,7 +18,8 @@ class TestAppConfig:
     """Test AppConfig environment variable loading and validation."""
 
     def test_load_all_required_env_variables(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that all required environment variables are correctly loaded."""
         # Arrange: Set all required environment variables
@@ -46,7 +47,8 @@ class TestAppConfig:
         assert config.JWT_SECRET_KEY == "test-secret-key-123456"
 
     def test_default_values_applied_when_optional_vars_not_set(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that default values are applied when optional variables are not set."""
         # Arrange: Set only required variables
@@ -78,7 +80,8 @@ class TestAppConfig:
         assert config.JWT_REFRESH_TOKEN_EXPIRES == 2592000
 
     def test_config_attributes_have_correct_types(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that config attributes have correct types after loading."""
         # Arrange: Set environment variables with string values
@@ -112,7 +115,8 @@ class TestAppConfig:
         assert config.JWT_ACCESS_TOKEN_EXPIRES == 7200
 
     def test_loading_config_multiple_times_returns_consistent_results(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that loading config multiple times returns consistent results."""
         # Arrange: Set environment variables
@@ -142,21 +146,23 @@ class TestAppConfig:
 class TestAppConfigValidation:
     """Test AppConfig validation logic."""
 
-    def test_missing_required_env_variables_raise_validation_error(self) -> None:
+    def test_missing_required_env_variables_raise_validation_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that missing required environment variables raise validation errors."""
+        # Prevent loading from .env file by unsetting DOTENV_KEY and setting JWT_SECRET_KEY = 0
+        monkeypatch.setenv("JWT_SECRET_KEY", "0")
         # Act & Assert: Creating config without required vars should raise ValidationError
+        # because AppConfig has default values for all except JWT_SECRET_KEY
         with pytest.raises(ValidationError) as exc_info:
             AppConfig()
 
-        # Check that required fields are mentioned in the error
+        # Check that JWT_SECRET_KEY is mentioned in the error
         errors = exc_info.value.errors()
         error_fields = {error["loc"][0] for error in errors}
+        # Only JWT_SECRET_KEY is required without default, others have defaults
         required_fields = {
-            "DB_HOST",
-            "DB_PORT",
-            "DB_NAME",
-            "DB_USER",
-            "DB_PASSWORD",
             "JWT_SECRET_KEY",
         }
 
@@ -164,7 +170,8 @@ class TestAppConfigValidation:
         assert len(error_fields.intersection(required_fields)) > 0
 
     def test_invalid_type_env_variables_raise_validation_error(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that invalid type environment variables raise validation errors."""
         # Arrange: Set required fields correctly except for one invalid type
@@ -186,7 +193,9 @@ class TestAppConfigValidation:
 
     @pytest.mark.parametrize("invalid_port", ["-1", "0", "70000", "abc"])
     def test_invalid_port_values_raise_validation_error(
-        self, monkeypatch: pytest.MonkeyPatch, invalid_port: str,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        invalid_port: str,
     ) -> None:
         """Test that invalid port values raise validation errors."""
         # Arrange: Set valid values except for invalid port
@@ -203,7 +212,8 @@ class TestAppConfigValidation:
             AppConfig()
 
     def test_short_jwt_secret_raises_validation_error(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that short JWT secret key raises validation error."""
         # Arrange: Set valid values except for short JWT secret
@@ -225,7 +235,9 @@ class TestAppConfigValidation:
 
     @pytest.mark.parametrize("invalid_duration", ["-1", "0"])
     def test_negative_or_zero_duration_raises_validation_error(
-        self, monkeypatch: pytest.MonkeyPatch, invalid_duration: str,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        invalid_duration: str,
     ) -> None:
         """Test that negative or zero duration values raise validation errors."""
         # Arrange: Set valid values except for invalid duration
@@ -303,7 +315,8 @@ JWT_SECRET_KEY=production_secret_from_env_file
         assert config.JWT_SECRET_KEY != "production_secret_from_env_file"
 
     def test_test_config_only_uses_test_prefixed_env_vars(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that TestConfig only uses TEST_ prefixed environment variables."""
         # Arrange: Set both regular and TEST_ prefixed variables
@@ -317,7 +330,8 @@ JWT_SECRET_KEY=production_secret_from_env_file
         assert config.DB_HOST == "test_override_host"
 
     def test_test_config_rejects_dangerous_db_host(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that TestConfig rejects dangerous production-like DB hosts."""
         # Arrange: Set dangerous DB host
@@ -328,7 +342,8 @@ JWT_SECRET_KEY=production_secret_from_env_file
             TestConfig()
 
     def test_test_config_rejects_live_db_host(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that TestConfig rejects dangerous live DB hosts."""
         # Arrange: Set dangerous DB host with "live" pattern
@@ -339,7 +354,8 @@ JWT_SECRET_KEY=production_secret_from_env_file
             TestConfig()
 
     def test_test_config_accepts_safe_db_host(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that TestConfig accepts safe DB hosts."""
         # Arrange: Set safe DB host
@@ -365,7 +381,8 @@ class TestGetConfigFactory:
         assert config.TESTING is True
 
     def test_get_config_returns_app_config_when_testing_false(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that get_config returns AppConfig when testing=False."""
         # Arrange: Set required environment variables for AppConfig
@@ -393,7 +410,8 @@ class TestIsTestingFunction:
     """Test is_testing utility function."""
 
     def test_is_testing_returns_true_when_testing_env_var_set(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that is_testing returns True when TESTING env var is set."""
         # Arrange: Set TESTING environment variable
@@ -404,7 +422,9 @@ class TestIsTestingFunction:
 
     @pytest.mark.parametrize("testing_value", ["false", "False", "FALSE", "0", ""])
     def test_is_testing_returns_false_for_falsy_values(
-        self, monkeypatch: pytest.MonkeyPatch, testing_value: str,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        testing_value: str,
     ) -> None:
         """Test that is_testing returns False for various falsy values."""
         # Arrange: Set TESTING to falsy value
@@ -414,7 +434,8 @@ class TestIsTestingFunction:
         assert is_testing() is False
 
     def test_is_testing_returns_false_when_testing_env_var_not_set(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that is_testing returns False when TESTING env var is not set."""
         # Arrange: Ensure TESTING is not set

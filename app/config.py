@@ -1,9 +1,14 @@
 """Configuration module for the application."""
 
+import os
+from pathlib import Path
 from typing import ClassVar, Self
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# プロジェクトのルートディレクトリを基準として定義する
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class AppConfig(BaseSettings):
@@ -21,12 +26,17 @@ class AppConfig(BaseSettings):
         extra="ignore",  # 未定義の環境変数を無視
     )
 
-    # Database settings - すべて必須
-    DB_HOST: str = Field(description="Database host")
-    DB_PORT: int = Field(description="Database port")
-    DB_NAME: str = Field(description="Database name")
-    DB_USER: str = Field(description="Database user")
-    DB_PASSWORD: str = Field(description="Database password")
+    # Database settings - 開発用にデフォルト値を設定
+    DB_DRIVER: str = Field(
+        default="sqlite",
+        description="Database driver to use (e.g., sqlite, mysql, postgres)",
+    )
+    DB_HOST: str = Field(default="localhost", description="Database host")
+    DB_PORT: int = Field(default=5432, description="Database port")
+    DB_NAME: str = Field(default="app_db", description="Database name")
+    DB_USER: str = Field(default="postgres", description="Database user")
+    # DB_PASSWORDはオプションで、デフォルトはNone
+    DB_PASSWORD: str | None = Field(default=None, description="Database password")
 
     # API settings - デフォルト値あり
     API_PORT: int = Field(default=5000, description="API server port")
@@ -35,15 +45,18 @@ class AppConfig(BaseSettings):
     # JWT settings - SECRET_KEYは必須、期限はデフォルトあり
     JWT_SECRET_KEY: str = Field(description="JWT secret key")
     JWT_ACCESS_TOKEN_EXPIRES: int = Field(
-        default=3600, description="JWT access token expiration in seconds"
+        default=3600,
+        description="JWT access token expiration in seconds",
     )
     JWT_REFRESH_TOKEN_EXPIRES: int = Field(
-        default=2592000, description="JWT refresh token expiration in seconds"
+        default=2592000,
+        description="JWT refresh token expiration in seconds",
     )
 
     # Feature flags - デフォルト値あり
     ENABLE_NEW_BILLING: bool = Field(
-        default=False, description="Enable new billing feature"
+        default=False,
+        description="Enable new billing feature",
     )
 
     @field_validator("DB_PORT", "API_PORT")
@@ -54,6 +67,23 @@ class AppConfig(BaseSettings):
             msg = "Port must be between 1 and 65535"
             raise ValueError(msg)
         return v
+
+    @model_validator(mode="after")
+    def validate_db_dependencies(self) -> Self:
+        """DB_DRIVERに応じて、他のDB関連フィールドが必須かチェックする"""
+        if self.DB_DRIVER in ["mysql"]:
+            required_fields = [
+                "DB_HOST",
+                "DB_PORT",
+                "DB_USER",
+                "DB_PASSWORD",
+                "DB_NAME",
+            ]
+            for field in required_fields:
+                if getattr(self, field) is None:
+                    msg = f"{field} is required for the '{self.DB_DRIVER}' driver"
+                    raise ValueError(msg)
+        return self
 
     @field_validator("JWT_ACCESS_TOKEN_EXPIRES", "JWT_REFRESH_TOKEN_EXPIRES")
     @classmethod
@@ -76,7 +106,10 @@ class AppConfig(BaseSettings):
     @property
     def database_url(self) -> str:
         """Generate SQLite database URL for production."""
-        return f"sqlite:///{self.DB_NAME}"
+        # 絶対パスを構築して、パスの曖昧さをなくす
+        db_path = BASE_DIR / self.DB_NAME
+        # WindowsとLinuxの両方で動くように os.path.normpath を使うとより堅牢
+        return f"sqlite:///{os.path.normpath(str(db_path))}"
 
     def to_flask_config(self) -> dict:
         """Convert to Flask test configuration format."""
@@ -142,7 +175,9 @@ class TestConfig(BaseSettings):
         """テスト用データベースURL生成"""
         if self.DB_NAME == ":memory:":
             return "sqlite:///:memory:"
-        return f"sqlite:///{self.DB_NAME}"
+
+        db_path = BASE_DIR / self.DB_NAME
+        return f"sqlite:///{os.path.normpath(str(db_path))}"
 
     def to_flask_config(self) -> dict:
         """Convert to Flask test configuration format."""
