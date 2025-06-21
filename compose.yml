@@ -3,8 +3,7 @@ services:
     build: 
       context: .
       dockerfile: ./docker/Dockerfile
-      args:
-        WORKSPACE_FOLDER: "/workspace"
+      target: builder
     ports:
       - "5000:5000"
     environment:
@@ -14,7 +13,6 @@ services:
     volumes:
       - .:/workspace:cached
       - poetry-cache:/tmp/poetry_cache
-    # command: sleep infinity
 
 volumes:
   poetry-cache:

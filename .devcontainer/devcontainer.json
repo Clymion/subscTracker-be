@@ -6,6 +6,11 @@
     ],
     "service": "backend-api",
     "workspaceFolder": "/workspace",
+    "overrideCommand": false,
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    },
+    "remoteUser": "root",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -21,7 +26,8 @@
                 "Gruntfuggly.todo-tree",
                 "charliermarsh.ruff",
                 "ms-vscode.test-adapter-converter",
-                "saoudrizwan.claude-dev"
+                "saoudrizwan.claude-dev",
+                "humao.rest-client"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -31,9 +37,5 @@
                 "python.formatting.blackPath": "/usr/local/bin/black"
             }
         }
-    },
-    "containerEnv": {
-        "SHELL": "/bin/bash"
-    },
-    "remoteUser": "root"
+    }
 }
