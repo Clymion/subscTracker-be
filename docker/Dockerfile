@@ -51,6 +51,10 @@ COPY . .
 # Litestreamの設定ファイルをコピー
 RUN mkdir -p /etc/litestream
 COPY docker/litestream.yml /etc/litestream.yml
+
+# データベースのディレクトリを作成
+RUN mkdir -p /workspace/instance
+
 # entrypointスクリプトをコピーして実行権限を付与
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
