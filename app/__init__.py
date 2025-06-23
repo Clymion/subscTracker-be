@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from app.api.v1.auth import auth_bp
 from app.api.v1.label import label_bp
 from app.api.v1.subscription import subscription_bp
+from app.common.error_handlers import register_error_handlers
 from app.common.logging_setup import setup_logging
 from app.config import AppConfig, TestConfig, get_config
 from app.models import db
@@ -25,6 +26,9 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     # Initialize JWT manager
     jwt = JWTManager(app)
     jwt.init_app(app)
+
+    # Register error handlers
+    register_error_handlers(app)
 
     # Setup logging
     setup_logging(app)

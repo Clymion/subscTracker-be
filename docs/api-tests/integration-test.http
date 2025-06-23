@@ -5,6 +5,8 @@
 # 変数定義
 # ----------------------------------------
 @host = http://localhost:5000
+# @host = https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app
+
 @email = testuser1@example.com
 @password = StrongPassword123!
 @username = testuser1
@@ -34,12 +36,6 @@ Content-Type: application/json
   "confirm_password": "{{password}}",
   "base_currency": "JPY"
 }
-
-###
-# レスポンスからトークンとユーザーIDを保存
-@accessToken = {{register.response.body.token}}
-@refreshToken = {{register.response.body.refresh_token}}
-@userId = {{register.response.body.user.id}}
 
 ### 1.2. ログイン
 # 登録した情報でログインし、新しいトークンを取得
@@ -113,6 +109,8 @@ Authorization: Bearer {{accessToken}}
 GET {{host}}/api/v1/labels?parent_id=null
 Authorization: Bearer {{accessToken}}
 
+###
+# レスポンスからルートラベルのIDを取得
 @labelId_parent = {{getRootLabels.response.body.data.labels[0].label_id}}
 
 ### 2.5. ラベル一覧の取得 (親ID指定)
@@ -120,6 +118,8 @@ Authorization: Bearer {{accessToken}}
 GET {{host}}/api/v1/labels?parent_id={{labelId_parent}}
 Authorization: Bearer {{accessToken}}
 
+###
+# レスポンスから子ラベルのIDを取得
 @labelId_child = {{getChildLabels.response.body.data.labels[0].label_id}}
 
 ###
@@ -171,6 +171,8 @@ Content-Type: application/json
 GET {{host}}/api/v1/subscriptions
 Authorization: Bearer {{accessToken}}
 
+###
+# レスポンスからサブスクリプションのIDを取得
 @subscriptionId = {{getSubscriptions.response.body.data.subscriptions[0].subscription_id}}
 
 ### 3.3. サブスクリプション詳細の取得
@@ -205,8 +207,9 @@ Authorization: Bearer {{accessToken}}
 ### 4.1. ラベルの削除 (子 → 親の順番)
 DELETE {{host}}/api/v1/labels/{{labelId_child}}
 Authorization: Bearer {{accessToken}}
+Content-Type: application/json
 
-###
+### 4.2. 親ラベルの削除
 DELETE {{host}}/api/v1/labels/{{labelId_parent}}
 Authorization: Bearer {{accessToken}}
 
@@ -223,4 +226,9 @@ Content-Type: application/json
 ### 5.2. 間違ったトークンでのアクセス
 GET {{host}}/api/v1/subscriptions
 Authorization: Bearer invalid-token
+Content-Type: application/json
+
+### 5.3. 存在しないURLへのアクセス
+GET {{host}}/api/v1/nonexistent-endpoint
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json

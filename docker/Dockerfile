@@ -1,7 +1,7 @@
-FROM python:3.13-slim
+# ---- ビルダー・ステージ (Builder Stage) ----
+FROM python:3.13-slim AS builder
 
-ARG WORKSPACE_FOLDER
-
+# コマンドのユーティリティ
 RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 
 # 必要なパッケージをインストール
@@ -9,12 +9,10 @@ RUN apt-get update && apt-get install -y \
     git curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Poetry のインストール
+# Poetry のインストールと設定
 ENV POETRY_HOME="/opt/poetry" \
-    POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=false \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_INSTALLER_PARALLEL=false \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
 RUN curl -sSL https://install.python-poetry.org | python - \
@@ -22,25 +20,46 @@ RUN curl -sSL https://install.python-poetry.org | python - \
 
 ENV PATH="$POETRY_HOME/bin:$PATH"
 
-# 作業ディレクトリを作成
-RUN mkdir -p ${WORKSPACE_FOLDER}
+WORKDIR /workspace
 
-WORKDIR ${WORKSPACE_FOLDER}
-
-# poetryの設定とインストール
+# 依存関係をインストールする（開発用も含む）
 COPY pyproject.toml poetry.lock* ./
-RUN poetry config virtualenvs.in-project false \
-    && poetry config installer.parallel false \
-    && poetry config virtualenvs.create false \
-    && poetry install --no-root
+# --only main は本番用、--with dev は開発用も含む
+RUN poetry install --no-root
 
-USER root
+# ---- 本番ステージ (Production Stage) ----
+# クリーンな環境に、ビルドした成果物だけをコピー
+FROM python:3.13-slim AS production
 
-# Pythonのパスを設定
-ENV PYTHONPATH=${WORKSPACE_FOLDER}
+# Litestreamのインストールに必要なパッケージを追加
+RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Flaskアプリが使用するポートを公開
-EXPOSE 5000
+# Litestreamをインストール
+RUN curl -sfL "https://github.com/benbjohnson/litestream/releases/download/v0.3.12/litestream-v0.3.12-linux-amd64.deb" -o litestream.deb \
+&& dpkg -i litestream.deb \
+&& rm litestream.deb
 
-# 開発サーバー起動コマンド
-# CMD ["flask", "--app", "api", "run", "--host=0.0.0.0"]
+WORKDIR /workspace
+
+# ビルダー・ステージから、インストール済みのライブラリだけをコピー
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /workspace/pyproject.toml /workspace/pyproject.toml
+COPY --from=builder /workspace/poetry.lock /workspace/poetry.lock
+
+# アプリケーションコードをコピー
+COPY . .
+# Litestreamの設定ファイルをコピー
+RUN mkdir -p /etc/litestream
+COPY docker/litestream.yml /etc/litestream.yml
+
+# データベースのディレクトリを作成
+RUN mkdir -p /workspace/instance
+
+# entrypointスクリプトをコピーして実行権限を付与
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# Cloud Run は 8080 環境変数でリッスンするポートを指定
+ENV PORT=8080
+
+ENTRYPOINT ["./entrypoint.sh"]

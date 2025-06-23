@@ -55,10 +55,8 @@ def setup_logging(app: Flask) -> None:
             The same response object.
 
         """
-        if not hasattr(g, "start_time"):
-            duration = -1.0
-        else:
-            duration = time.time() - g.start_time
+        # Calculate duration of the request
+        duration = -1.0 if not hasattr(g, "start_time") else time.time() - g.start_time
 
         client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
         method = request.method
@@ -91,18 +89,3 @@ def setup_logging(app: Flask) -> None:
             logging.info(log_message)
 
         return response
-
-    @app.errorhandler(Exception)
-    def handle_exception(e: Exception) -> None:
-        """
-        Log unhandled exceptions.
-
-        Args:
-            e: The exception instance.
-
-        Raises:
-            The original exception after logging.
-
-        """
-        logging.exception(f"Unhandled Exception: {e}")
-        raise e
