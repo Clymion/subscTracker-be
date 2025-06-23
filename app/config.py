@@ -17,6 +17,9 @@ class AppConfig(BaseSettings):
 
     This class loads environment variables from a .env file and system environment,
     validates required fields, applies default values, and ensures type safety.
+
+    Google Cloud Run(Production)では、`.env`ファイルは読み込まれないため、
+    環境変数のデフォルト値は本番用の値を設定
     """
 
     model_config = SettingsConfigDict(
@@ -33,7 +36,7 @@ class AppConfig(BaseSettings):
     )
     DB_HOST: str = Field(default="localhost", description="Database host")
     DB_PORT: int = Field(default=5432, description="Database port")
-    DB_NAME: str = Field(default="app_db", description="Database name")
+    DB_NAME: str = Field(default="instance/app.db", description="Database name")
     DB_USER: str = Field(default="postgres", description="Database user")
     # DB_PASSWORDはオプションで、デフォルトはNone
     DB_PASSWORD: str | None = Field(default=None, description="Database password")
