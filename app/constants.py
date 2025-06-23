@@ -196,6 +196,7 @@ class ErrorMessages:
     INVALID_PAYMENT_METHOD = "Invalid payment method"
 
     # General errors
+    INTERNAL_SERVER_ERROR = "Internal server error"
     BAD_REQUEST = "Bad request"
     NOT_FOUND = "Resource not found"
     UNAUTHORIZED = "Unauthorized access"

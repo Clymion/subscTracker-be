@@ -1,5 +1,12 @@
 from flask import Flask, jsonify
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import (
+    BadRequest,
+    Forbidden,
+    HTTPException,
+    InternalServerError,
+    NotFound,
+    Unauthorized,
+)
 
 from app.constants import ErrorMessages
 
@@ -39,6 +46,7 @@ def register_error_handlers(app: Flask) -> None:
         return response
 
     @app.errorhandler(400)
+    @app.errorhandler(BadRequest)
     def bad_request_error(e: HTTPException | Exception) -> tuple:
         """Handle 400 Bad Request errors."""
         return (
@@ -55,6 +63,7 @@ def register_error_handlers(app: Flask) -> None:
         )
 
     @app.errorhandler(401)
+    @app.errorhandler(Unauthorized)
     def unauthorized_error(e: HTTPException | Exception) -> tuple:
         """Handle 401 Unauthorized errors."""
         return (
@@ -71,6 +80,7 @@ def register_error_handlers(app: Flask) -> None:
         )
 
     @app.errorhandler(403)
+    @app.errorhandler(Forbidden)
     def forbidden_error(e: HTTPException | Exception) -> tuple:
         """Handle 403 Forbidden errors."""
         return (
@@ -87,7 +97,8 @@ def register_error_handlers(app: Flask) -> None:
         )
 
     @app.errorhandler(404)
-    def not_found_error(e: HTTPException | Exception) -> tuple:
+    @app.errorhandler(NotFound)
+    def not_found_error(e: HTTPException) -> tuple:
         """Handle 404 Not Found errors."""
         return (
             jsonify(
@@ -103,7 +114,8 @@ def register_error_handlers(app: Flask) -> None:
         )
 
     @app.errorhandler(Exception)
-    def internal_server_error(e: Exception) -> tuple:
+    @app.errorhandler(InternalServerError)
+    def internal_server_error(e: HTTPException | Exception) -> tuple:
         """Handle unexpected server errors."""
         # Log the exception here if logging is set up
         return (
