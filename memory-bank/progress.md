@@ -30,11 +30,12 @@
   - プロジェクトドキュメント（README.md）
 
 ## What's left
-- 🔄 **サブスクリプション管理API**の実装
-  - Subscriptionモデルの設計・実装
-  - SubscriptionServiceの実装
-  - CRUD APIエンドポイント
-  - ラベル機能とステータス管理
+- ✅ **サブスクリプション管理API**の実装
+  - Subscriptionモデルの設計・実装【完了】
+  - SubscriptionServiceの実装【完了】
+  - CRUD APIエンドポイント【完了】
+  - ラベル機能とステータス管理【完了】
+  - ラベル管理APIの実装【完了】
 
 - 📋 **支払い履歴管理API**の実装
   - PaymentHistoryモデルの実装
@@ -61,7 +62,7 @@
 ## Current status
 - **Phase 1: 基盤システム構築** ✅ **完了**
 - **Phase 2: 認証システム** ✅ **完了**  
-- **Phase 3: サブスクリプション管理** 🔄 **準備中**
+- **Phase 3: サブスクリプション管理** ✅ **準備中**
 - **Phase 4: 支払い履歴・為替** 📋 **計画中**
 - **Phase 5: 通知・分析機能** 📋 **計画中**
 
