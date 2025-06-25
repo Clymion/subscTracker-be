@@ -1,0 +1,41 @@
+Label:
+  type: object
+  properties:
+    id:
+      type: string
+      description: ラベルID
+    name:
+      type: string
+      description: ラベル名
+    color:
+      type: string
+      description: ラベルの色
+    usage_count:
+      type: integer
+      description: 使用数
+  required:
+    - id
+    - name
+    - color
+    - usage_count
+LabelCreateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: ラベル名
+    color:
+      type: string
+      description: ラベルの色
+  required:
+    - name
+    - color
+LabelUpdateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: ラベル名
+    color:
+      type: string
+      description: ラベルの色

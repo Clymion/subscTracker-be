@@ -1,0 +1,79 @@
+LoginRequest:
+  type: object
+  properties:
+    email:
+      type: string
+      format: email
+      description: メールアドレス
+    password:
+      type: string
+      description: パスワード
+  required:
+    - email
+    - password
+RegisterRequest:
+  type: object
+  properties:
+    username:
+      type: string
+      minLength: 3
+      maxLength: 32
+      description: ユーザー名
+    email:
+      type: string
+      format: email
+      description: メールアドレス
+    password:
+      type: string
+      minLength: 8
+      description: パスワード
+    confirmPassword:
+      type: string
+      description: パスワード（確認用）
+    base_currency:
+      type: string
+      description: 基準通貨
+  required:
+    - username
+    - email
+    - password
+    - confirmPassword
+    - base_currency
+UserBasic:
+  type: object
+  properties:
+    id:
+      type: string
+      description: ユーザーID
+    username:
+      type: string
+      description: ユーザー名
+    email:
+      type: string
+      format: email
+      description: メールアドレス
+  required:
+    - id
+    - username
+    - email
+User:
+  allOf:
+    - $ref: '#/UserBasic'
+    - type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+      required:
+        - created_at
+UserUpdateRequest:
+  type: object
+  properties:
+    username:
+      type: string
+      description: ユーザー名
+    email:
+      type: string
+      format: email
+      description: メールアドレス

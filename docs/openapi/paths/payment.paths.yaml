@@ -1,0 +1,162 @@
+/payments:
+  get:
+    tags:
+      - 支払い履歴
+    summary: 支払い履歴一覧の取得
+    description: 支払い履歴の一覧を取得します
+    operationId: getPayments
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: year
+        in: query
+        description: 年
+        schema:
+          type: integer
+      - name: month
+        in: query
+        description: 月
+        schema:
+          type: integer
+      - name: subscription_id
+        in: query
+        description: サブスクリプションID
+        schema:
+          type: string
+      - name: payment_method
+        in: query
+        description: 支払い方法
+        schema:
+          type: string
+      - name: currency
+        in: query
+        description: 通貨
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: ページ番号
+        schema:
+          type: integer
+          default: 1
+      - name: per_page
+        in: query
+        description: 1ページあたりの件数
+        schema:
+          type: integer
+          default: 10
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    payments:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/payment.schemas.yaml#/Payment'
+                meta:
+                  $ref: '../components/schemas/common.schemas.yaml#/Meta'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  post:
+    tags:
+      - 支払い履歴
+    summary: 支払い記録の作成
+    description: 新しい支払い記録を作成します
+    operationId: createPayment
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/payment.schemas.yaml#/PaymentCreateRequest'
+    responses:
+      '201':
+        description: 正常に作成しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/payment.schemas.yaml#/Payment'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+'/payments/{id}':
+  patch:
+    tags:
+      - 支払い履歴
+    summary: 支払い記録の更新
+    description: 指定された支払い記録を更新します
+    operationId: updatePayment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        description: 支払いID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/payment.schemas.yaml#/PaymentUpdateRequest'
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/payment.schemas.yaml#/Payment'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  delete:
+    tags:
+      - 支払い履歴
+    summary: 支払い記録の削除
+    description: 指定された支払い記録を削除します
+    operationId: deletePayment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        description: 支払いID
+        required: true
+        schema:
+          type: string
+    responses:
+      '204':
+        description: 正常に削除しました
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
