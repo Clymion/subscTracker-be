@@ -12,7 +12,7 @@ info:
 servers:
   - url: https://api.substracker.example.com/api/v1
     description: 本番環境
-  - url: https://staging-api.substracker.example.com/api/v1
+  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
     description: ステージング環境
   - url: http://localhost:5000/api/v1
     description: 開発環境

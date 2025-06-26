@@ -13,6 +13,7 @@ services:
     volumes:
       - .:/workspace:cached
       - poetry-cache:/tmp/poetry_cache
+    command: poetry run flask --app 'app:create_app()' run --host=0.0.0.0 --debug
 
 volumes:
   poetry-cache:
