@@ -1,0 +1,100 @@
+openapi: 3.1.1
+info:
+  title: サブスク管理アプリ API
+  description: |
+    サブスクリプションサービス管理アプリケーションのAPI仕様書です。
+    ユーザー認証、サブスクリプション管理、支払い履歴、各種設定など
+    アプリの全機能をREST APIで利用することができます。
+  version: 1.0.0
+  contact:
+    name: SubsTracker Support
+    email: support@substracker.example.com
+servers:
+  - url: https://api.substracker.example.com/api/v1
+    description: 本番環境
+  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
+    description: ステージング環境
+  - url: http://localhost:5000/api/v1
+    description: 開発環境
+tags:
+  - name: 認証
+    description: ユーザー認証関連のAPI
+  - name: サブスクリプション
+    description: サブスクリプション管理関連のAPI
+  - name: 支払い履歴
+    description: 支払い履歴管理関連のAPI
+  - name: プロフィール設定
+    description: ユーザープロフィール設定関連のAPI
+  - name: 通貨設定
+    description: 通貨・為替レート設定関連のAPI
+  - name: 支払い方法設定
+    description: 支払い方法設定関連のAPI
+  - name: 通知設定
+    description: 通知設定関連のAPI
+  - name: ラベル管理
+    description: ラベル管理関連のAPI
+  - name: マスターデータ
+    description: マスターデータ関連のAPI
+
+# 各ファイルからパス定義を読み込む（JSON Pointerのエスケープを適用）
+paths:
+  # auth.paths.yaml
+  /auth/login:
+    $ref: './paths/auth.paths.yaml#/~1auth~1login'
+  /auth/register:
+    $ref: './paths/auth.paths.yaml#/~1auth~1register'
+  /auth/refresh:
+    $ref: './paths/auth.paths.yaml#/~1auth~1refresh'
+  /users/{userId}:
+    $ref: './paths/auth.paths.yaml#/~1users~1{userId}'
+  /users/{userId}/change-password:
+    $ref: './paths/auth.paths.yaml#/~1users~1{userId}~1change-password'
+
+  # subscription.paths.yaml
+  /subscriptions:
+    $ref: './paths/subscription.paths.yaml#/~1subscriptions'
+  /subscriptions/{id}:
+    $ref: './paths/subscription.paths.yaml#/~1subscriptions~1{id}'
+
+  # payment.paths.yaml
+  /payments:
+    $ref: './paths/payment.paths.yaml#/~1payments'
+  /payments/{id}:
+    $ref: './paths/payment.paths.yaml#/~1payments~1{id}'
+
+  # settings.paths.yaml
+  /users/{userId}/settings/currency:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1settings~1currency'
+  /exchange-rates/refresh:
+    $ref: './paths/settings.paths.yaml#/~1exchange-rates~1refresh'
+  /users/{userId}/payment-methods:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1payment-methods'
+  /users/{userId}/payment-methods/{id}:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1payment-methods~1{id}'
+  /users/{userId}/notification-preferences:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1notification-preferences'
+  /users/{userId}/notifications/push/subscribe:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1notifications~1push~1subscribe'
+  /users/{userId}/notification-channels/email/verify:
+    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1notification-channels~1email~1verify'
+
+  # label.paths.yaml
+  /labels:
+    $ref: './paths/label.paths.yaml#/~1labels'
+  /labels/{id}:
+    $ref: './paths/label.paths.yaml#/~1labels~1{id}'
+
+  # master.paths.yaml
+  /master/payment-methods:
+    $ref: './paths/master.paths.yaml#/~1master~1payment-methods'
+  /master/payment-frequencies:
+    $ref: './paths/master.paths.yaml#/~1master~1payment-frequencies'
+  /master/subscription-statuses:
+    $ref: './paths/master.paths.yaml#/~1master~1subscription-statuses'
+
+# 共通コンポーネントを読み込む
+components:
+  securitySchemes:
+    $ref: './components/securitySchemes.yaml'
+  responses:
+    $ref: './components/responses.yaml'

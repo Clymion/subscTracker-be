@@ -1,0 +1,122 @@
+/labels:
+  get:
+    tags:
+      - ラベル管理
+    summary: ラベル一覧の取得
+    description: ラベルの一覧を取得します
+    operationId: getLabels
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    labels:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/label.schemas.yaml#/Label'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  post:
+    tags:
+      - ラベル管理
+    summary: ラベルの作成
+    description: 新しいラベルを作成します
+    operationId: createLabel
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/label.schemas.yaml#/LabelCreateRequest'
+    responses:
+      '201':
+        description: 正常に作成しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/label.schemas.yaml#/Label'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+'/labels/{id}':
+  patch:
+    tags:
+      - ラベル管理
+    summary: ラベルの更新
+    description: 指定されたラベルを更新します
+    operationId: updateLabel
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        description: ラベルID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/label.schemas.yaml#/LabelUpdateRequest'
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/label.schemas.yaml#/Label'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  delete:
+    tags:
+      - ラベル管理
+    summary: ラベルの削除
+    description: 指定されたラベルを削除します
+    operationId: deleteLabel
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        description: ラベルID
+        required: true
+        schema:
+          type: string
+    responses:
+      '204':
+        description: 正常に削除しました
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

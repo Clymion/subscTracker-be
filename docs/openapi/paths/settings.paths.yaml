@@ -1,0 +1,399 @@
+'/users/{userId}/settings/currency':
+  get:
+    tags:
+      - 通貨設定
+    summary: 通貨設定の取得
+    description: 指定されたユーザーの通貨設定を取得します
+    operationId: getCurrencySettings
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/CurrencySettings'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  patch:
+    tags:
+      - 通貨設定
+    summary: 通貨設定の更新
+    description: 指定されたユーザーの通貨設定を更新します
+    operationId: updateCurrencySettings
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/settings.schemas.yaml#/CurrencySettingsUpdateRequest'
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/CurrencySettings'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+'/exchange-rates/refresh':
+  post:
+    tags:
+      - 通貨設定
+    summary: 為替レートの手動更新
+    description: 為替レートを手動で更新します
+    operationId: refreshExchangeRates
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    updated_at:
+                      type: string
+                      format: date-time
+                    rates:
+                      type: object
+                      additionalProperties:
+                        type: number
+                      examples:
+                        USD: 1
+                        JPY: 148.5
+                        EUR: 0.92
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+'/users/{userId}/payment-methods':
+  get:
+    tags:
+      - 支払い方法設定
+    summary: 支払い方法一覧の取得
+    description: 指定されたユーザーの支払い方法一覧を取得します
+    operationId: getPaymentMethods
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    payment_methods:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/settings.schemas.yaml#/PaymentMethod'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  post:
+    tags:
+      - 支払い方法設定
+    summary: 支払い方法の追加
+    description: 指定されたユーザーに新しい支払い方法を追加します
+    operationId: createPaymentMethod
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/settings.schemas.yaml#/PaymentMethodCreateRequest'
+    responses:
+      '201':
+        description: 正常に追加しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/PaymentMethod'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+'/users/{userId}/payment-methods/{id}':
+  patch:
+    tags:
+      - 支払い方法設定
+    summary: 支払い方法の更新
+    description: 指定された支払い方法を更新します
+    operationId: updatePaymentMethod
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: 支払い方法ID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              is_default:
+                type: boolean
+                description: デフォルトの支払い方法として設定するかどうか
+            required:
+              - is_default
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/PaymentMethod'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  delete:
+    tags:
+      - 支払い方法設定
+    summary: 支払い方法の削除
+    description: 指定された支払い方法を削除します
+    operationId: deletePaymentMethod
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: 支払い方法ID
+        required: true
+        schema:
+          type: string
+    responses:
+      '204':
+        description: 正常に削除しました
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+'/users/{userId}/notification-preferences':
+  get:
+    tags:
+      - 通知設定
+    summary: 通知設定の取得
+    description: 指定されたユーザーの通知設定を取得します
+    operationId: getNotificationPreferences
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/NotificationPreferences'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  patch:
+    tags:
+      - 通知設定
+    summary: 通知設定の更新
+    description: 指定されたユーザーの通知設定を更新します
+    operationId: updateNotificationPreferences
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/settings.schemas.yaml#/NotificationPreferencesUpdateRequest'
+    responses:
+      '200':
+        description: 正常に更新しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/settings.schemas.yaml#/NotificationPreferences'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+'/users/{userId}/notifications/push/subscribe':
+  post:
+    tags:
+      - 通知設定
+    summary: プッシュ通知の購読
+    description: プッシュ通知の購読情報を登録します
+    operationId: subscribePushNotifications
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              subscription:
+                type: object
+                description: Push API Subscriptionオブジェクト
+            required:
+              - subscription
+    responses:
+      '200':
+        description: プッシュ通知の購読に成功しました
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+'/users/{userId}/notification-channels/email/verify':
+  post:
+    tags:
+      - 通知設定
+    summary: メール通知の検証
+    description: メール通知チャネルを検証します
+    operationId: verifyEmailNotificationChannel
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: path
+        description: ユーザーID
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 検証メールを送信しました
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

@@ -1,0 +1,108 @@
+'/master/payment-methods':
+  get:
+    tags:
+      - マスターデータ
+    summary: 支払い方法一覧の取得
+    description: 利用可能な支払い方法の一覧を取得します
+    operationId: getMasterPaymentMethods
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    payment_methods:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: 支払い方法ID
+                          name:
+                            type: string
+                            description: 支払い方法名
+                        required:
+                          - id
+                          - name
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+'/master/payment-frequencies':
+  get:
+    tags:
+      - マスターデータ
+    summary: 支払い頻度一覧の取得
+    description: 利用可能な支払い頻度の一覧を取得します
+    operationId: getMasterPaymentFrequencies
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    frequencies:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: 支払い頻度ID
+                          name:
+                            type: string
+                            description: 支払い頻度名
+                        required:
+                          - id
+                          - name
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+'/master/subscription-statuses':
+  get:
+    tags:
+      - マスターデータ
+    summary: サブスクリプションステータス一覧の取得
+    description: 利用可能なサブスクリプションステータスの一覧を取得します
+    operationId: getMasterSubscriptionStatuses
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 正常に取得しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    statuses:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: ステータスID
+                          name:
+                            type: string
+                            description: ステータス名
+                        required:
+                          - id
+                          - name
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'

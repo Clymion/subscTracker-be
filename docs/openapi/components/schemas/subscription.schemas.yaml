@@ -1,0 +1,139 @@
+SubscriptionSummary:
+  type: object
+  properties:
+    id:
+      type: string
+      description: サブスクリプションID
+    name:
+      type: string
+      description: サービス名
+    price:
+      type: number
+      description: 料金
+    currency:
+      type: string
+      description: 通貨
+    next_payment_date:
+      type: string
+      format: date
+      description: 次回支払日
+    status:
+      type: string
+      description: ステータス
+    labels:
+      type: array
+      items:
+        $ref: './label.schemas.yaml#/Label'
+  required:
+    - id
+    - name
+    - price
+    - currency
+    - next_payment_date
+    - status
+Subscription:
+  allOf:
+    - $ref: '#/SubscriptionSummary'
+    - type: object
+      properties:
+        frequency:
+          type: string
+          description: 支払い頻度
+        initial_payment_date:
+          type: string
+          format: date
+          description: 初回支払日
+        payment_method:
+          type: string
+          description: 支払い方法
+        url:
+          type: string
+          format: uri
+          description: サービスのURL
+        notes:
+          type: string
+          description: メモ
+      required:
+        - frequency
+        - initial_payment_date
+        - payment_method
+SubscriptionCreateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: サービス名
+    price:
+      type: number
+      minimum: 0
+      description: 料金
+    currency:
+      type: string
+      description: 通貨
+    frequency:
+      type: string
+      description: 支払い頻度
+    initial_payment_date:
+      type: string
+      format: date
+      description: 初回支払日
+    payment_method:
+      type: string
+      description: 支払い方法
+    labels:
+      type: array
+      items:
+        type: string
+      description: ラベルIDの配列
+    url:
+      type: string
+      format: uri
+      description: サービスのURL
+    notes:
+      type: string
+      description: メモ
+  required:
+    - name
+    - price
+    - currency
+    - frequency
+    - initial_payment_date
+    - payment_method
+SubscriptionUpdateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      description: サービス名
+    price:
+      type: number
+      minimum: 0
+      description: 料金
+    currency:
+      type: string
+      description: 通貨
+    frequency:
+      type: string
+      description: 支払い頻度
+    initial_payment_date:
+      type: string
+      format: date
+      description: 初回支払日
+    payment_method:
+      type: string
+      description: 支払い方法
+    labels:
+      type: array
+      items:
+        type: string
+      description: ラベルIDの配列
+    url:
+      type: string
+      format: uri
+      description: サービスのURL
+    notes:
+      type: string
+      description: メモ
+    status:
+      type: string
+      description: ステータス

@@ -32,3 +32,6 @@ instance/*
 repomix-output.xml
 .env
 *.env
+
+# Project-specific ignores
+!docs/openapi/build/

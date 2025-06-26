@@ -1,0 +1,79 @@
+Payment:
+  type: object
+  properties:
+    id:
+      type: string
+      description: 支払いID
+    subscription_id:
+      type: string
+      description: サブスクリプションID
+    subscription_name:
+      type: string
+      description: サブスクリプション名
+    amount:
+      type: number
+      description: 支払額
+    currency:
+      type: string
+      description: 通貨
+    payment_date:
+      type: string
+      format: date
+      description: 支払日
+    payment_method:
+      type: string
+      description: 支払い方法
+    exchange_rate:
+      type: [number, 'null']
+      description: 為替レート
+  required:
+    - id
+    - subscription_id
+    - subscription_name
+    - amount
+    - currency
+    - payment_date
+    - payment_method
+PaymentCreateRequest:
+  type: object
+  properties:
+    subscription_id:
+      type: string
+      description: サブスクリプションID
+    amount:
+      type: number
+      minimum: 0
+      description: 支払額
+    currency:
+      type: string
+      description: 通貨
+    payment_date:
+      type: string
+      format: date
+      description: 支払日
+    payment_method:
+      type: string
+      description: 支払い方法
+  required:
+    - subscription_id
+    - amount
+    - currency
+    - payment_date
+    - payment_method
+PaymentUpdateRequest:
+  type: object
+  properties:
+    amount:
+      type: number
+      minimum: 0
+      description: 支払額
+    currency:
+      type: string
+      description: 通貨
+    payment_date:
+      type: string
+      format: date
+      description: 支払日
+    payment_method:
+      type: string
+      description: 支払い方法

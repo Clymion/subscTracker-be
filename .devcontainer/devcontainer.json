@@ -27,7 +27,8 @@
                 "charliermarsh.ruff",
                 "ms-vscode.test-adapter-converter",
                 "saoudrizwan.claude-dev",
-                "humao.rest-client"
+                "humao.rest-client",
+                "GitHub.vscode-pull-request-github"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",

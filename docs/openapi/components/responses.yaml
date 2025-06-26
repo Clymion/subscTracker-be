@@ -1,0 +1,51 @@
+BadRequest:
+  description: リクエストが不正です
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.schemas.yaml#/Error'
+      examples:
+        validation_error:
+          value:
+            error:
+              code: VALIDATION_REQUIRED
+              message: 必須項目が入力されていません
+              details:
+                field: name
+                reason: 必須項目です
+Unauthorized:
+  description: 認証に失敗しました
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.schemas.yaml#/Error'
+      examples:
+        invalid_token:
+          value:
+            error:
+              code: AUTH_INVALID_TOKEN
+              message: 無効なトークンです
+Forbidden:
+  description: 権限がありません
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.schemas.yaml#/Error'
+      examples:
+        unauthorized:
+          value:
+            error:
+              code: AUTH_UNAUTHORIZED
+              message: この操作を行う権限がありません
+NotFound:
+  description: リソースが見つかりません
+  content:
+    application/json:
+      schema:
+        $ref: './schemas/common.schemas.yaml#/Error'
+      examples:
+        resource_not_found:
+          value:
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: 指定されたリソースが見つかりません

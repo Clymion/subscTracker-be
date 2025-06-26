@@ -1,0 +1,47 @@
+Error:
+  type: object
+  properties:
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: エラーコード
+        message:
+          type: string
+          description: エラーメッセージ
+        details:
+          type: object
+          description: 詳細情報
+      required:
+        - code
+        - message
+Meta:
+  type: object
+  properties:
+    pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          description: 現在のページ
+        total_pages:
+          type: integer
+          description: 総ページ数
+        total_items:
+          type: integer
+          description: 総アイテム数
+        per_page:
+          type: integer
+          description: 1ページあたりの件数
+      required:
+        - current_page
+        - total_pages
+        - total_items
+        - per_page
+    summary:
+      type: object
+      properties:
+        total_amount:
+          type: number
+          description: 合計金額
