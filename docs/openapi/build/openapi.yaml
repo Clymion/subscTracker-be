@@ -10,10 +10,10 @@ info:
     name: SubsTracker Support
     email: support@substracker.example.com
 servers:
-  - url: https://api.substracker.example.com/api/v1
-    description: 本番環境
-  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
+  - url: https://stage.api.jakinjakin.com/api/v1
     description: ステージング環境
+  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
+    description: ステージング環境2
   - url: http://localhost:5000/api/v1
     description: 開発環境
 tags:
@@ -35,6 +35,8 @@ tags:
     description: ラベル管理関連のAPI
   - name: マスターデータ
     description: マスターデータ関連のAPI
+  - name: System
+    description: サービス監視・運用関連のAPI
 paths:
   /auth/login:
     post:
@@ -1281,6 +1283,68 @@ paths:
                             - name
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /health:
+    get:
+      tags:
+        - System
+      summary: ヘルスチェック
+      description: サービスの稼働状況と依存関係（DBなど）の状態を確認します。
+      operationId: healthCheck
+      responses:
+        '200':
+          description: サービスは正常に稼働しています。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: サービスの一部または全体が利用不可能です。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /version:
+    get:
+      tags:
+        - System
+      summary: バージョン情報取得
+      description: アプリケーションの現在のバージョン、ビルド情報、コミットハッシュを取得します。
+      operationId: getVersion
+      responses:
+        '200':
+          description: バージョン情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+  /metrics:
+    get:
+      tags:
+        - System
+      summary: パフォーマンス指標取得
+      description: アプリケーションの稼働時間、メモリ使用量、CPU使用率などのパフォーマンス指標を取得します。
+      operationId: getMetrics
+      responses:
+        '200':
+          description: パフォーマンス指標
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+  /status:
+    get:
+      tags:
+        - System
+      summary: サービス全体ステータス取得
+      description: サービス全体の稼働状態、バージョン、依存関係のステータスを統合的に提供します。
+      operationId: getStatus
+      responses:
+        '200':
+          description: サービス全体のステータス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
 components:
   securitySchemes:
     bearerAuth:
@@ -1938,3 +2002,103 @@ components:
         color:
           type: string
           description: ラベルの色
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: サービス全体の稼働状態
+          enum:
+            - healthy
+            - unhealthy
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          description: チェック実行時のタイムスタンプ (UTC)
+        checks:
+          type: object
+          description: 各依存関係の稼働状態
+          properties:
+            database:
+              type: string
+              enum:
+                - healthy
+                - unhealthy
+              description: データベースの接続状態
+              example: healthy
+    VersionResponse:
+      type: object
+      properties:
+        version:
+          type: string
+          description: セマンティックバージョニング形式のバージョン番号
+          example: 1.0.0
+        build:
+          type: string
+          description: ビルド識別子
+          example: 20250713-local
+        commit:
+          type: string
+          description: Gitのコミットハッシュ
+          example: localdev
+        build_date:
+          type: string
+          format: date-time
+          description: ビルド日時
+          example: '2025-07-13T12:00:00Z'
+    MetricsResponse:
+      type: object
+      properties:
+        uptime_seconds:
+          type: integer
+          description: サーバーの稼働時間（秒）
+          example: 3600
+        memory_usage_mb:
+          type: number
+          format: float
+          description: 現在のメモリ使用量 (MB)
+          example: 128.5
+        cpu_usage_percent:
+          type: number
+          format: float
+          description: 現在のCPU使用率 (%)
+          example: 15.2
+    StatusResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          description: サービス名
+          example: substracker-api
+        status:
+          type: string
+          description: サービス全体の運用状態
+          enum:
+            - operational
+            - degraded
+            - outage
+          example: operational
+        version:
+          type: string
+          description: 現在のバージョン
+          example: 1.0.0
+        uptime_seconds:
+          type: integer
+          description: サーバーの稼働時間（秒）
+          example: 3600
+        timestamp:
+          type: string
+          format: date-time
+          description: ステータス取得日時 (UTC)
+        dependencies:
+          type: object
+          description: 依存サービスの接続状態
+          properties:
+            database:
+              type: string
+              enum:
+                - connected
+                - disconnected
+              description: データベースの接続状態
+              example: connected

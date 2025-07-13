@@ -10,10 +10,12 @@ info:
     name: SubsTracker Support
     email: support@substracker.example.com
 servers:
-  - url: https://api.substracker.example.com/api/v1
-    description: 本番環境
-  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
+  # - url: https://api.substracker.example.com/api/v1
+  #   description: 本番環境
+  - url: https://stage.api.jakinjakin.com/api/v1
     description: ステージング環境
+  - url: https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app/api/v1
+    description: ステージング環境2
   - url: http://localhost:5000/api/v1
     description: 開発環境
 tags:
@@ -35,6 +37,8 @@ tags:
     description: ラベル管理関連のAPI
   - name: マスターデータ
     description: マスターデータ関連のAPI
+  - name: System
+    description: サービス監視・運用関連のAPI
 
 # 各ファイルからパス定義を読み込む（JSON Pointerのエスケープを適用）
 paths:
@@ -91,6 +95,16 @@ paths:
     $ref: './paths/master.paths.yaml#/~1master~1payment-frequencies'
   /master/subscription-statuses:
     $ref: './paths/master.paths.yaml#/~1master~1subscription-statuses'
+
+  # system.paths.yaml
+  /health:
+    $ref: './paths/system.paths.yaml#/~1health'
+  /version:
+    $ref: './paths/system.paths.yaml#/~1version'
+  /metrics:
+    $ref: './paths/system.paths.yaml#/~1metrics'
+  /status:
+    $ref: './paths/system.paths.yaml#/~1status'
 
 # 共通コンポーネントを読み込む
 components:

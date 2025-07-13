@@ -1,0 +1,94 @@
+HealthResponse:
+  type: object
+  properties:
+    status:
+      type: string
+      description: サービス全体の稼働状態
+      enum: [healthy, unhealthy]
+      example: healthy
+    timestamp:
+      type: string
+      format: date-time
+      description: チェック実行時のタイムスタンプ (UTC)
+    checks:
+      type: object
+      description: 各依存関係の稼働状態
+      properties:
+        database:
+          type: string
+          enum: [healthy, unhealthy]
+          description: データベースの接続状態
+          example: healthy
+
+VersionResponse:
+  type: object
+  properties:
+    version:
+      type: string
+      description: セマンティックバージョニング形式のバージョン番号
+      example: "1.0.0"
+    build:
+      type: string
+      description: ビルド識別子
+      example: "20250713-local"
+    commit:
+      type: string
+      description: Gitのコミットハッシュ
+      example: "localdev"
+    build_date:
+      type: string
+      format: date-time
+      description: ビルド日時
+      example: "2025-07-13T12:00:00Z"
+
+MetricsResponse:
+  type: object
+  properties:
+    uptime_seconds:
+      type: integer
+      description: サーバーの稼働時間（秒）
+      example: 3600
+    memory_usage_mb:
+      type: number
+      format: float
+      description: 現在のメモリ使用量 (MB)
+      example: 128.5
+    cpu_usage_percent:
+      type: number
+      format: float
+      description: 現在のCPU使用率 (%)
+      example: 15.2
+
+StatusResponse:
+  type: object
+  properties:
+    service:
+      type: string
+      description: サービス名
+      example: substracker-api
+    status:
+      type: string
+      description: サービス全体の運用状態
+      enum: [operational, degraded, outage]
+      example: operational
+    version:
+      type: string
+      description: 現在のバージョン
+      example: "1.0.0"
+    uptime_seconds:
+      type: integer
+      description: サーバーの稼働時間（秒）
+      example: 3600
+    timestamp:
+      type: string
+      format: date-time
+      description: ステータス取得日時 (UTC)
+    dependencies:
+      type: object
+      description: 依存サービスの接続状態
+      properties:
+        database:
+          type: string
+          enum: [connected, disconnected]
+          description: データベースの接続状態
+          example: connected

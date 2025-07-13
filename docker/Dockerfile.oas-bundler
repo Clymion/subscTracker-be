@@ -1,0 +1,12 @@
+FROM node:22
+
+WORKDIR /app
+
+RUN npm install -g @redocly/cli@latest
+
+USER node
+
+ENTRYPOINT ["redocly"]
+
+# デフォルトコマンドでヘルプを表示
+CMD ["--help"]
