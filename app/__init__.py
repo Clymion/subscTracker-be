@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 from app.api.v1.auth import auth_bp
@@ -16,11 +17,8 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
 
-    if config_obj:
-        app.config.update(config_obj.to_flask_config())
-    else:
-        config = get_config(testing=False)
-        app.config.update(config.to_flask_config())
+    config = config_obj if config_obj else get_config(testing=False)
+    app.config.update(config.to_flask_config())
 
     # Initialize database
     db.init_app(app)
@@ -28,6 +26,9 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     # Initialize JWT manager
     jwt = JWTManager(app)
     jwt.init_app(app)
+
+    # Enable CORS
+    CORS(app, resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}})
 
     # Register error handlers
     register_error_handlers(app)
