@@ -9,6 +9,10 @@ if [ ! -f "$DB_FILE" ]; then
     echo "Database file not found at $DB_FILE"
     read -p "Do you want to create a new database? (y/n): " choice
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        if [ ! -d "instance" ]; then
+            mkdir instance
+            echo "Created 'instance' directory."
+        fi
         touch "$DB_FILE"
         if [ $? -eq 0 ]; then
             echo "New database created successfully."

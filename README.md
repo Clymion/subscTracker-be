@@ -142,7 +142,12 @@ cp .env.example .env
 poetry run pytest
 ```
 
-4. **開発サーバーの起動**
+4. **マイグレーションの実行**
+```bash
+./scripts/apply_migrations.sh
+```
+
+5. **開発サーバーの起動**
 ```bash
 poetry run flask --app app run --debug
 ```
