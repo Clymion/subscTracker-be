@@ -56,6 +56,12 @@ class AppConfig(BaseSettings):
         description="JWT refresh token expiration in seconds",
     )
 
+    # CORS settings - デフォルト値あり
+    ALLOWED_ORIGINS: list[str] = Field(
+        default=["https://subsctracker-fe.web.app"],
+        description="List of allowed origins for CORS",
+    )
+
     # Feature flags - デフォルト値あり
     ENABLE_NEW_BILLING: bool = Field(
         default=False,
@@ -106,6 +112,21 @@ class AppConfig(BaseSettings):
             raise ValueError(msg)
         return v
 
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def validate_allowed_origins(cls, v: str | list[str]) -> list[str]:
+        """CORSで許可するオリジンの形式を検証"""
+        if not v:
+            msg = "ALLOWED_ORIGINS must not be empty"
+            raise ValueError(msg)
+        if isinstance(v, str):
+            v = [origin.strip() for origin in v.split(",") if origin.strip()]
+        for origin in v:
+            if not origin.startswith(("http://", "https://")):
+                msg = f"Invalid origin format: {origin}"
+                raise ValueError(msg)
+        return v
+
     @property
     def database_url(self) -> str:
         """Generate SQLite database URL for production."""
@@ -120,6 +141,7 @@ class AppConfig(BaseSettings):
             "SQLALCHEMY_DATABASE_URI": self.database_url,
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
             "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
+            "ALLOWED_ORIGINS": self.ALLOWED_ORIGINS,
             "DEBUG": self.DEBUG,
             "TESTING": False,
         }
@@ -153,6 +175,12 @@ class TestConfig(BaseSettings):
     )
     JWT_ACCESS_TOKEN_EXPIRES: int = 3600
     JWT_REFRESH_TOKEN_EXPIRES: int = 86400  # 24時間(テスト用に短縮)
+
+    # CORS設定 - デフォルト値あり
+    ALLOWED_ORIGINS: list[str] = Field(
+        default=["http://localhost"],
+        description="List of allowed origins for CORS in test environment",
+    )
 
     # テスト環境フラグ
     API_PORT: int = 5000

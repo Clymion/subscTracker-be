@@ -142,7 +142,12 @@ cp .env.example .env
 poetry run pytest
 ```
 
-4. **開発サーバーの起動**
+4. **マイグレーションの実行**
+```bash
+./scripts/apply_migrations.sh
+```
+
+5. **開発サーバーの起動**
 ```bash
 poetry run flask --app app run --debug
 ```
@@ -186,6 +191,20 @@ poetry run flask --app app run --debug
 
 ### API仕様書
 詳細なAPI仕様は `/docs/openapi/` ディレクトリのYAMLファイルを参照してください。
+
+```bash
+# Dockerイメージをビルド
+docker build -f docker/Dockerfile.oas-bundler -t redocly .
+# バンドル
+docker run --rm -v $(pwd):/app redocly bundle /app/docs/openapi/openapi.yaml -o /app/docs/openapi/build/openapi.yaml --ext yaml
+
+# その他の使い方
+docker run --rm redocly --help
+# OpenAPIファイルを検証
+docker run --rm -v $(pwd):/app redocly validate /app/docs/openapi/openapi.yaml
+# コンテナ内シェルの起動
+docker run --rm -it -v $(pwd):/app --entrypoint /bin/bash redocly
+```
 
 ## 🧪 テスト
 

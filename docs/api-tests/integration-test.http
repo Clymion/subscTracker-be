@@ -21,6 +21,27 @@
 
 ###
 # ========================================
+# 0. 疎通確認 (Health Check)
+# ========================================
+### 0.1. サーバーの疎通確認
+GET {{host}}/api/v1/health
+Content-Type: application/json
+
+### 0.2. バージョン情報の取得
+GET {{host}}/api/v1/version
+Content-Type: application/json
+
+### 0.3. メトリクスの取得
+GET {{host}}/api/v1/metrics
+Content-Type: application/json
+
+### 0.4. サービス全体のステータスの取得
+GET {{host}}/api/v1/status
+Content-Type: application/json
+
+
+###
+# ========================================
 # 1. 認証フロー (Authentication Flow)
 # ========================================
 

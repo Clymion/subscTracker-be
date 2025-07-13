@@ -1,10 +1,12 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 from app.api.v1.auth import auth_bp
 from app.api.v1.label import label_bp
 from app.api.v1.subscription import subscription_bp
 from app.api.v1.swagger import swagger_spec_bp, swagger_ui_bp
+from app.api.v1.system import system_bp
 from app.common.error_handlers import register_error_handlers
 from app.common.logging_setup import setup_logging
 from app.config import AppConfig, TestConfig, get_config
@@ -15,11 +17,8 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
 
-    if config_obj:
-        app.config.update(config_obj.to_flask_config())
-    else:
-        config = get_config(testing=False)
-        app.config.update(config.to_flask_config())
+    config = config_obj if config_obj else get_config(testing=False)
+    app.config.update(config.to_flask_config())
 
     # Initialize database
     db.init_app(app)
@@ -27,6 +26,9 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     # Initialize JWT manager
     jwt = JWTManager(app)
     jwt.init_app(app)
+
+    # Enable CORS
+    CORS(app, resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}})
 
     # Register error handlers
     register_error_handlers(app)
@@ -42,5 +44,8 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     # OpenAPI仕様書(JSON)を配信するBlueprintを登録
     app.register_blueprint(swagger_spec_bp, url_prefix="/api/v1")
     app.register_blueprint(swagger_ui_bp)
+
+    # システム監視用のBlueprintを登録
+    app.register_blueprint(system_bp, url_prefix="/api/v1")
 
     return app

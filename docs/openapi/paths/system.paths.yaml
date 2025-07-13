@@ -1,0 +1,65 @@
+/health:
+  get:
+    tags:
+      - System
+    summary: ヘルスチェック
+    description: サービスの稼働状況と依存関係（DBなど）の状態を確認します。
+    operationId: healthCheck
+    responses:
+      '200':
+        description: サービスは正常に稼働しています。
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/system.schemas.yaml#/HealthResponse'
+      '503':
+        description: サービスの一部または全体が利用不可能です。
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/system.schemas.yaml#/HealthResponse'
+
+/version:
+  get:
+    tags:
+      - System
+    summary: バージョン情報取得
+    description: アプリケーションの現在のバージョン、ビルド情報、コミットハッシュを取得します。
+    operationId: getVersion
+    responses:
+      '200':
+        description: バージョン情報
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/system.schemas.yaml#/VersionResponse'
+
+/metrics:
+  get:
+    tags:
+      - System
+    summary: パフォーマンス指標取得
+    description: アプリケーションの稼働時間、メモリ使用量、CPU使用率などのパフォーマンス指標を取得します。
+    operationId: getMetrics
+    responses:
+      '200':
+        description: パフォーマンス指標
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/system.schemas.yaml#/MetricsResponse'
+
+/status:
+  get:
+    tags:
+      - System
+    summary: サービス全体ステータス取得
+    description: サービス全体の稼働状態、バージョン、依存関係のステータスを統合的に提供します。
+    operationId: getStatus
+    responses:
+      '200':
+        description: サービス全体のステータス
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/system.schemas.yaml#/StatusResponse'

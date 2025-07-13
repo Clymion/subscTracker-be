@@ -27,7 +27,7 @@ MANIFEST
 *.bak*
 .coverage
 *.tmp*
-logs/*
+logs/*.log
 instance/*
 repomix-output.xml
 .env
