@@ -141,6 +141,8 @@ class AppConfig(BaseSettings):
             "SQLALCHEMY_DATABASE_URI": self.database_url,
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
             "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
+            "JWT_ACCESS_TOKEN_EXPIRES": self.JWT_ACCESS_TOKEN_EXPIRES,
+            "JWT_REFRESH_TOKEN_EXPIRES": self.JWT_REFRESH_TOKEN_EXPIRES,
             "ALLOWED_ORIGINS": self.ALLOWED_ORIGINS,
             "DEBUG": self.DEBUG,
             "TESTING": False,
