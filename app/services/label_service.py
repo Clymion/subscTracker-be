@@ -65,13 +65,19 @@ class LabelService:
         if parent_id is not None or filter_root_labels:
             # parent_idが指定されている場合、またはルートレベルのラベルのみを取得する場合
             results = self.label_repository.find_all_by_user_id_with_usage_filtered(
-                user_id, parent_id,
+                user_id,
+                parent_id,
             )
         else:
             # parent_idがNoneの場合は、子も含めて全てのラベルを取得
             results = self.label_repository.find_all_by_user_id_with_usage(user_id)
         return [
-            {**label.to_dict(), "usage_count": usage_count}
+            {
+                **label.to_dict(),
+                "usage_count": usage_count,
+                "id": label.label_id,
+                **({"label_id": None} if "label_id" in label.to_dict() else {}),
+            }
             for label, usage_count in results
         ]  # to_dict()はLabelモデルに要実装
 
