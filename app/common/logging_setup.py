@@ -5,6 +5,9 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, g, request
 from flask.wrappers import Response
 
+LOG_FILE = "logs/app.log"
+STD_LOG_FILE = "logs/std.log"
+
 
 def setup_logging(app: Flask) -> None:
     """
@@ -15,7 +18,7 @@ def setup_logging(app: Flask) -> None:
 
     """
     log_formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+        "%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
     log_level = app.config.get("LOG_LEVEL", "INFO").upper()
 
@@ -26,7 +29,10 @@ def setup_logging(app: Flask) -> None:
 
     # File handler with rotation
     file_handler = RotatingFileHandler(
-        "logs/app.log", maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+        LOG_FILE,
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8",
     )
     file_handler.setFormatter(log_formatter)
     file_handler.setLevel(log_level)
@@ -89,3 +95,23 @@ def setup_logging(app: Flask) -> None:
             logging.info(log_message)
 
         return response
+
+def get_logger(name: str = "std") -> logging.Logger:
+    """
+    Get a logger instance with the specified name.
+
+    Args:
+        name: The name of the logger.
+
+    Returns:
+        A logging.Logger instance.
+
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    fh = RotatingFileHandler(STD_LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=5)
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    return logger

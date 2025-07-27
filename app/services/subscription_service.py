@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.common.logging_setup import get_logger
 from app.constants import ErrorMessages
 from app.exceptions import (
     DuplicateSubscriptionError,
@@ -23,6 +24,8 @@ from app.repositories.label_repository import (
     LabelRepository,
 )  # ラベルリポジトリもインポート
 from app.repositories.subscription_repository import SubscriptionRepository
+
+logger = get_logger()
 
 
 class SubscriptionService:
@@ -81,10 +84,16 @@ class SubscriptionService:
                 If a subscription with the same name already exists for the user.
             ValidationError: If input data is invalid.
         """
+        # frequencyキーがあればpayment_frequencyにマッピングする
+        if "frequency" in data:
+            data["payment_frequency"] = data.pop("frequency")
+
         name = data.get("name")
         if self.subscription_repository.find_by_user_and_name(user_id, name):
             raise DuplicateSubscriptionError(ErrorMessages.DUPLICATE_SUBSCRIPTION)
 
+        # labelsを除いたデータをSubscriptionモデルに渡す
+        label_ids = data.pop("labels", [])
         try:
             subscription = Subscription(user_id=user_id, **data)
             # モデルのバリデーションを実行
@@ -98,7 +107,29 @@ class SubscriptionService:
             )
             subscription.validate_dates()
         except (ValueError, TypeError) as e:
+            logger.exception(e)
             raise ValidationError(str(e)) from e
+
+        # ラベルの処理
+        if label_ids:
+            new_labels = []
+            for label_id in label_ids:
+                try:
+                    # 文字列で送られてきたIDを整数に変換
+                    l_id = int(label_id)
+                except (ValueError, TypeError):
+                    raise ValidationError(
+                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID."
+                    )
+
+                label = self.label_repository.find_by_id(l_id)
+                # ラベルが存在するか、そして自分のものかを確認するのだ
+                if not label or label.user_id != user_id:
+                    raise ValidationError(
+                        f"Label with ID {l_id} not found or access denied."
+                    )
+                new_labels.append(label)
+            subscription.labels = new_labels
 
         return self.subscription_repository.save(subscription)
 

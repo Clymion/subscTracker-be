@@ -1537,6 +1537,9 @@ components:
         currency:
           type: string
           description: 通貨
+        payment_frequency:
+          type: string
+          description: 支払い頻度
         next_payment_date:
           type: string
           format: date
@@ -1619,6 +1622,9 @@ components:
         notes:
           type: string
           description: メモ
+        status:
+          type: string
+          description: ステータス
       required:
         - name
         - price
@@ -1626,6 +1632,7 @@ components:
         - frequency
         - initial_payment_date
         - payment_method
+        - status
     Subscription:
       allOf:
         - $ref: '#/components/schemas/SubscriptionSummary'

@@ -59,7 +59,7 @@ class Subscription(db.Model):
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Status and optional fields
-    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=True, index=True)
     url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -12,6 +12,7 @@ from flask.wrappers import Response
 from flask_jwt_extended import get_jwt_identity
 
 from app.common.auth_middleware import jwt_required_custom
+from app.common.logging_setup import get_logger
 from app.exceptions import (
     DuplicateSubscriptionError,
     SubscriptionAccessDenied,
@@ -20,6 +21,8 @@ from app.exceptions import (
 )
 from app.models import db
 from app.services.subscription_service import SubscriptionService
+
+logger = get_logger(__name__)
 
 # サブスクリプション用のBlueprintを作成
 subscription_bp = Blueprint("subscription", __name__)
@@ -92,6 +95,8 @@ def create_subscription() -> tuple[Response, int]:
         return jsonify({"error": {"code": 400, "message": str(e)}}), 400
     except Exception as e:
         # 予期せぬエラーは500を返す
+        logger.exception("Unexpected error during subscription creation")
+        logger.exception(e)
         return (
             jsonify(
                 {
