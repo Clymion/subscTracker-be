@@ -12,6 +12,8 @@ from flask.testing import FlaskClient
 from sqlalchemy.orm import Session
 
 from app.constants import ErrorMessages
+from app.models.label import Label
+from app.models.user import User
 from tests.helpers import (
     assert_error_response,
     assert_success_response,
@@ -626,3 +628,44 @@ class TestAuthDataValidation:
 
         # Assert: Should return appropriate error status
         assert response.status_code >= expected_status
+
+
+def test_register_user_creates_default_labels(
+    client: FlaskClient,
+    clean_db: Generator[Session, None, None],
+):
+    # 新規ユーザ登録用のペイロード
+    registration_data = make_registration_data()
+    headers = make_api_headers()
+
+    # ユーザ登録APIを呼び出す
+    response = client.post(
+        "/api/v1/auth/register",
+        json=registration_data,
+        headers=headers,
+    )
+    assert response.status_code in (200, 201)
+
+    data = response.get_json()
+    user_id = data.get("user").get("id")
+    assert user_id is not None
+
+    # DBからユーザを取得して存在確認
+    user = User.query.filter_by(user_id=user_id).first()
+    assert user is not None
+
+    # DBからユーザに紐づくラベルを取得
+    labels = Label.query.filter_by(user_id=user_id).all()
+    assert len(labels) == 4
+
+    # デフォルトラベルの名前と色を検証
+    expected_labels = [
+        {"name": "動画", "color": "#EF4444"},
+        {"name": "音楽", "color": "#3B82F6"},
+        {"name": "クラウド", "color": "#10B981"},
+        {"name": "エンタメ", "color": "#F59E0B"},
+    ]
+
+    label_dicts = [{"name": label.name, "color": label.color} for label in labels]
+    for expected_label in expected_labels:
+        assert expected_label in label_dicts

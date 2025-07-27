@@ -1,10 +1,13 @@
+import json
 import re
+from pathlib import Path
 
 from sqlalchemy.exc import IntegrityError
 
 from app.constants import ErrorMessages, ValidationConstants
 from app.models import db
 from app.models.user import User
+from app.services.label_service import LabelService
 
 
 class AuthService:
@@ -75,6 +78,21 @@ class AuthService:
         # Save to database
         db.session.add(user)
         try:
+            # コミット前にデフォルトラベルを登録するためにflushを使ってuser_idを取得可能にする
+            db.session.flush()
+
+            # デフォルトラベルをJSONから読み込み、登録する
+            default_labels_path = Path("instance/default_labels.json")
+            if default_labels_path.exists():
+                with default_labels_path.open(encoding="utf-8") as f:
+                    default_labels = json.load(f)
+            else:
+                default_labels = []
+
+            label_service = LabelService(db.session)
+            for label_data in default_labels:
+                label_service.create_label(user.user_id, label_data)
+
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
