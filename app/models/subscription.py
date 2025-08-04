@@ -107,7 +107,7 @@ class Subscription(db.Model):
     def to_dict(self) -> dict:
         """サブスクリプションオブジェクトを辞書に変換する"""
         return {
-            "subscription_id": self.subscription_id,
+            "id": self.subscription_id,
             "user_id": self.user_id,
             "name": self.name,
             "price": self.price,
