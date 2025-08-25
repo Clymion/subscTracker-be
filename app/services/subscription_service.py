@@ -150,12 +150,20 @@ class SubscriptionService:
         """
         subscription = self.get_subscription(user_id, subscription_id)
 
-        # ラベルの更新を先に処理する
-        if "labels" in data:
-            label_ids = data.pop("labels", [])
+        # ラベルの更新
+        label_ids = data.get("subscription").get("labels", [])
+        if "labels" in data.get("subscription", {}):
             new_labels = []
+            logger.debug(label_ids)
             for label_id in label_ids:
-                label = self.label_repository.find_by_id(label_id)
+                try:
+                    l_id = int(label_id)
+                    logger.debug(f"Processing label ID: {l_id}")
+                except (ValueError, TypeError):
+                    raise ValidationError(
+                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID."
+                    )
+                label = self.label_repository.find_by_id(l_id)
                 if not label or label.user_id != user_id:
                     raise ValidationError(
                         f"Label with ID {label_id} not found or access denied."
