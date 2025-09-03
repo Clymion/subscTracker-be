@@ -1,12 +1,38 @@
+"""Logging setup for the application."""
 import logging
 import time
+from datetime import datetime
+from logging import LogRecord
 from logging.handlers import RotatingFileHandler
+from zoneinfo import ZoneInfo
 
 from flask import Flask, g, request
 from flask.wrappers import Response
 
 LOG_FILE = "logs/app.log"
 STD_LOG_FILE = "logs/std.log"
+
+JST = ZoneInfo("Asia/Tokyo")
+
+
+class JSTFormatter(logging.Formatter):
+    """Formatter to display time in JST."""
+
+    def formatTime(self, record: LogRecord, datefmt: str | None = None) -> str:  # noqa: N802
+        """
+        Format the time for the log record in JST.
+
+        Args:
+            record: The log record.
+            datefmt: The date format string.
+
+        Returns:
+            The formatted time string.
+        """
+        dt = datetime.fromtimestamp(record.created, JST)
+        if datefmt:
+            return dt.strftime(datefmt)
+        return dt.isoformat()
 
 
 def setup_logging(app: Flask) -> None:
@@ -17,7 +43,7 @@ def setup_logging(app: Flask) -> None:
         app: The Flask application instance.
 
     """
-    log_formatter = logging.Formatter(
+    log_formatter = JSTFormatter(
         "%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
     log_level = app.config.get("LOG_LEVEL", "INFO").upper()
@@ -111,7 +137,7 @@ def get_logger(name: str = "std") -> logging.Logger:
     logger.setLevel(logging.DEBUG)
     fh = RotatingFileHandler(STD_LOG_FILE, maxBytes=10 * 1024 * 1024, backupCount=5)
     fh.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = JSTFormatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     return logger
