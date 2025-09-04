@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask, jsonify
 from werkzeug.exceptions import (
     BadRequest,
@@ -9,6 +11,8 @@ from werkzeug.exceptions import (
 )
 
 from app.constants import ErrorMessages
+
+logger = logging.getLogger(__name__)
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -117,7 +121,7 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(InternalServerError)
     def internal_server_error(e: HTTPException | Exception) -> tuple:
         """Handle unexpected server errors."""
-        # Log the exception here if logging is set up
+        logger.exception("Unhandled exception occurred: %s", e)
         return (
             jsonify(
                 {

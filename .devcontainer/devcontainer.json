@@ -11,6 +11,13 @@
         "SHELL": "/bin/bash"
     },
     "remoteUser": "root",
+    // Gemini CLIをインストール
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts"
+        }
+    },
+    "postCreateCommand": "npm install -g @google/gemini-cli@latest",
     "customizations": {
         "vscode": {
             "extensions": [
