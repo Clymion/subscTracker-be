@@ -13,6 +13,9 @@ SubscriptionSummary:
     currency:
       type: string
       description: 通貨
+    payment_frequency:
+      type: string
+      description: 支払い頻度
     next_payment_date:
       type: string
       format: date
@@ -92,6 +95,9 @@ SubscriptionCreateRequest:
     notes:
       type: string
       description: メモ
+    status:
+      type: string
+      description: ステータス
   required:
     - name
     - price
@@ -99,6 +105,7 @@ SubscriptionCreateRequest:
     - frequency
     - initial_payment_date
     - payment_method
+    - status
 SubscriptionUpdateRequest:
   type: object
   properties:

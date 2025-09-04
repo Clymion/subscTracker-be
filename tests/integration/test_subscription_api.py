@@ -299,7 +299,7 @@ class TestGetSubscriptionDetailAPI:
         # Assert
         data = assert_success_response(response, 200)
         retrieved_sub = data["data"]
-        assert retrieved_sub["subscription_id"] == sub_id
+        assert retrieved_sub["id"] == sub_id
         assert retrieved_sub["name"] == user.subscriptions[0].name
 
     def test_get_subscription_by_id_returns_404_for_non_existent_id(

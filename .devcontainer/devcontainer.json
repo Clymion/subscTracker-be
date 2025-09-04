@@ -11,6 +11,13 @@
         "SHELL": "/bin/bash"
     },
     "remoteUser": "root",
+    // Gemini CLIをインストール
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts"
+        }
+    },
+    "postCreateCommand": "npm install -g @google/gemini-cli@latest",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -28,7 +35,8 @@
                 "ms-vscode.test-adapter-converter",
                 "saoudrizwan.claude-dev",
                 "humao.rest-client",
-                "GitHub.vscode-pull-request-github"
+                "GitHub.vscode-pull-request-github",
+                "hbenl.vscode-test-explorer"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
