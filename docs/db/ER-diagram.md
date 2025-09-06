@@ -42,12 +42,11 @@ erDiagram
     }
 
     EXCHANGE_RATES {
-        INT rate_id PK "PRIMARY KEY"
-        STRING from_currency "NOT NULL"
-        STRING to_currency "NOT NULL"
+        STRING from_currency "PRIMARY KEY"
+        STRING to_currency "PRIMARY KEY"
+        DATE date "PRIMARY KEY"
         REAL rate "NOT NULL"
         STRING source "NOT NULL"
-        DATE date "NOT NULL"
         TIMESTAMP created_at "NOT NULL"
         TIMESTAMP updated_at "NOT NULL"
     }
