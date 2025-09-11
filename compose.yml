@@ -10,8 +10,10 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud/adc.json
     volumes:
       - .:/workspace:cached
+      - ./credentials/subscTracker_adc.json:/tmp/gcloud/adc.json:ro
       - poetry-cache:/tmp/poetry_cache
     command: poetry run flask --app 'app:create_app()' run --host=0.0.0.0 --debug
 

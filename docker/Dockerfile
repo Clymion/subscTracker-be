@@ -6,8 +6,18 @@ RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 
 # 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
-    git curl \
+    git apt-transport-https ca-certificates gnupg curl \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Litestreamをインストール
+RUN curl -sfL "https://github.com/benbjohnson/litestream/releases/download/v0.3.12/litestream-v0.3.12-linux-amd64.deb" -o litestream.deb \
+&& dpkg -i litestream.deb \
+&& rm litestream.deb
+# Litestreamの設定ファイルをコピー
+RUN mkdir -p /etc/litestream
+COPY docker/litestream.yml /etc/litestream.yml
 
 # Poetry のインストールと設定
 ENV POETRY_HOME="/opt/poetry" \

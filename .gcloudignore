@@ -1,0 +1,9 @@
+instance/
+log/
+
+.clinerules
+.devcontainer
+.pytest_cache
+.ruff_cache
+.tmp/
+.vscode
