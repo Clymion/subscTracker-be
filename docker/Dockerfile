@@ -7,6 +7,7 @@ RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 # 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
     git apt-transport-https ca-certificates gnupg curl \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*

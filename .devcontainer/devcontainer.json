@@ -1,5 +1,5 @@
 {
-    "name": "Python Dev Template",
+    "name": "SubscTracker Backend",
     "dockerComposeFile": [
         "../compose.yml",
         "docker-compose.yml"
