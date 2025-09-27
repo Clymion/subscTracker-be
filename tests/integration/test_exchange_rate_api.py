@@ -55,7 +55,7 @@ class TestGetExchangeRateAPI:
         """[Success] GET /exchange-rates: Returns 200 with the correct rate for an exact date match."""
         # Act
         response = client.get(
-            "/api/v1/exchange-rates?date=2025-09-26&from_currency=USD&to_currency=JPY"
+            "/api/v1/exchange-rates?date=2025-09-26&from_currency=USD&to_currency=JPY",
         )
 
         # Assert
@@ -70,7 +70,7 @@ class TestGetExchangeRateAPI:
         """[Success] GET /exchange-rates: Returns 200 with the most recent rate on fallback."""
         # Act
         response = client.get(
-            "/api/v1/exchange-rates?date=2025-09-27&from_currency=USD&to_currency=JPY"
+            "/api/v1/exchange-rates?date=2025-09-27&from_currency=USD&to_currency=JPY",
         )
 
         # Assert
@@ -98,14 +98,14 @@ class TestGetExchangeRateAPI:
         """[Failure] GET /exchange-rates: Returns 404 if no rate is found."""
         # Act
         response = client.get(
-            "/api/v1/exchange-rates?date=2025-09-24&from_currency=USD&to_currency=JPY"
+            "/api/v1/exchange-rates?date=2025-09-24&from_currency=USD&to_currency=JPY",
         )
 
         # Assert
         assert_error_response(response, 404, "Exchange rate not found")
 
     def test_get_rate_missing_param_returns_400(
-        self, client: FlaskClient, setup_exchange_rates: Session
+        self, client: FlaskClient, setup_exchange_rates: Session,
     ):
         """[Failure] GET /exchange-rates: Returns 400 if a currency parameter is missing."""
         # Act
@@ -115,12 +115,12 @@ class TestGetExchangeRateAPI:
         assert_error_response(response, 400, "Missing required query parameters")
 
     def test_get_rate_invalid_date_format_returns_400(
-        self, client: FlaskClient, setup_exchange_rates: Session
+        self, client: FlaskClient, setup_exchange_rates: Session,
     ):
         """[Failure] GET /exchange-rates: Returns 400 for an invalid date format."""
         # Act
         response = client.get(
-            "/api/v1/exchange-rates?date=26-09-2025&from_currency=USD&to_currency=JPY"
+            "/api/v1/exchange-rates?date=26-09-2025&from_currency=USD&to_currency=JPY",
         )
 
         # Assert

@@ -216,7 +216,7 @@ class TestRegisterAPI:
         assert data["user"]["username"] == "newuser"
 
     def test_register_with_duplicate_email(
-        self, client: FlaskClient, clean_db: Generator[Session, None, None]
+        self, client: FlaskClient, clean_db: Generator[Session, None, None],
     ):
         """Test registration failure with existing email."""
         # Arrange: Create existing user and prepare data with same email
@@ -249,7 +249,7 @@ class TestRegisterAPI:
 
         # Act: Make registration request
         response = client.post(
-            "/api/v1/auth/register", json=registration_data, headers=headers
+            "/api/v1/auth/register", json=registration_data, headers=headers,
         )
 
         # Assert: Should return 400 bad request

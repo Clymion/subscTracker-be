@@ -3,7 +3,7 @@ API endpoint for retrieving exchange rates.
 """
 from datetime import date
 
-from flask import Blueprint, current_app, request, abort
+from flask import Blueprint, abort, current_app, request
 from sqlalchemy.orm import Session
 
 from app.common.response_utils import success_response
@@ -16,7 +16,7 @@ exchange_rate_bp = Blueprint("exchange_rate_bp", __name__)
 
 
 @exchange_rate_bp.route("/exchange-rates", methods=["GET"])
-def get_exchange_rate():
+def get_exchange_rate() -> tuple[dict, int]:
     """Get the exchange rate for a given currency pair and date."""
     # Parameter validation
     from_currency = request.args.get("from_currency")
@@ -47,11 +47,14 @@ def get_exchange_rate():
 
     except ResourceNotFoundError:
         current_app.logger.warning(
-            f"Exchange rate not found for {from_currency}-{to_currency} on {target_date}"
+            "Exchange rate not found for %s-%s on %s",
+            from_currency,
+            to_currency,
+            target_date,
         )
         abort(404, description="Exchange rate not found")
     except Exception as e:
-        current_app.logger.error(
-            f"Unexpected error in get_exchange_rate: {e}", exc_info=True
+        current_app.logger.exception(
+            "Unexpected error in get_exchange_rate: %s", e,
         )
         abort(500, description="An unexpected error occurred")

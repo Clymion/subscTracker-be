@@ -70,7 +70,7 @@ class TestJWTMiddlewareSetup:
         """Set up minimal JWT configuration environment variables."""
         # Set only JWT-related environment variables
         monkeypatch.setenv(
-            "JWT_SECRET_KEY", "test-jwt-secret-key-for-middleware-testing-123456"
+            "JWT_SECRET_KEY", "test-jwt-secret-key-for-middleware-testing-123456",
         )
         monkeypatch.setenv("JWT_ACCESS_TOKEN_EXPIRES", "3600")
         monkeypatch.setenv("JWT_REFRESH_TOKEN_EXPIRES", "86400")
@@ -266,7 +266,7 @@ class TestJWTRequiredCustom(TestJWTMiddlewareSetup):
         assert data["message"] == "No auth required"
 
     def test_expired_token_returns_specific_error(
-        self, protected_routes_app: Flask, auth_headers_factory
+        self, protected_routes_app: Flask, auth_headers_factory,
     ):
         """Test that expired token returns specific error message."""
         # Arrange

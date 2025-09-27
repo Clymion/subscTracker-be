@@ -38,7 +38,8 @@
                 "GitHub.vscode-pull-request-github",
                 "hbenl.vscode-test-explorer",
                 "google.gemini-cli-vscode-ide-companion",
-                "bierner.markdown-mermaid"
+                "bierner.markdown-mermaid",
+                "tamasfe.even-better-toml"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",

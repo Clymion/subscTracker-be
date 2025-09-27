@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from app.constants import ErrorMessages
 from app.exceptions import ResourceNotFoundError
 from app.models.exchange_rate import ExchangeRate
 from app.repositories.exchange_rate_repository import ExchangeRateRepository
@@ -45,5 +46,5 @@ class ExchangeRateService:
             to_currency=to_currency,
         )
         if rate is None:
-            raise ResourceNotFoundError("Exchange rate not found for the given criteria.")
+            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
         return rate

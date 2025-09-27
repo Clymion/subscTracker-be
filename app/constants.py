@@ -191,6 +191,9 @@ class ErrorMessages:
     INVALID_HEX_COLOR = "Invalid hex color format"
     LABEL_NAME_TOO_LONG = "Label name is too long"
 
+    # Exchange Rate errors
+    EXCHANGE_RATE_NOT_FOUND = "Exchange rate not found"
+
     # Payment errors
     PAYMENT_FAILED = "Payment processing failed"
     INVALID_PAYMENT_METHOD = "Invalid payment method"
