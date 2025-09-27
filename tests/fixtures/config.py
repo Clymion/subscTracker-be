@@ -5,12 +5,8 @@ Minimal fixtures to support config testing without complex abstractions.
 """
 
 import os
-from typing import Any, Dict
-from unittest.mock import patch
 
 import pytest
-
-from app.config import TestConfig
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -36,7 +32,7 @@ def setup_test_environment() -> None:
         if var in os.environ:
             pytest.fail(
                 f"Dangerous production variable '{var}' detected. "
-                "Please unset this variable before running tests."
+                "Please unset this variable before running tests.",
             )
 
 
@@ -67,7 +63,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def required_env_vars(monkeypatch: pytest.MonkeyPatch) -> Dict[str, str]:
+def required_env_vars(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     """
     Set up all required environment variables for AppConfig.
 

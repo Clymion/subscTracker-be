@@ -6,7 +6,6 @@ from app.constants import ErrorMessages
 class PaginationError(ValueError):
     """Exception raised for errors in pagination parameters."""
 
-    pass
 
 
 def success_response(data: dict, meta: dict | None = None) -> tuple[dict, int]:
