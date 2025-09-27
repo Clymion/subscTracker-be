@@ -233,7 +233,7 @@ Content-Type: application/json
 
 ### 4.2. 過去の日付の為替レートを取得
 # 2025-01-01のUSDを基準通貨とした、JPYとKRWの為替レートを取得
-GET {{host}}/api/v1/exchange-rates?date=2025-09-21&base_currency=USD&target_currency=JPY
+GET {{host}}/api/v1/exchange-rates?date=2025-09-21&base_currency=USD&target_currencies=JPY
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
