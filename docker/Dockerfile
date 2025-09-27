@@ -29,7 +29,8 @@ ENV POETRY_HOME="/opt/poetry" \
 RUN curl -sSL https://install.python-poetry.org | python - \
     && chmod a+x /opt/poetry/bin/poetry
 
-ENV PATH="$POETRY_HOME/bin:$PATH"
+ENV PATH="$POETRY_HOME/bin:$PATH" \
+    PYTHONPATH="/workspace:$PYTHONPATH"
 
 WORKDIR /workspace
 
