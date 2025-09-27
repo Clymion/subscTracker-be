@@ -53,13 +53,14 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(BadRequest)
     def bad_request_error(e: HTTPException | Exception) -> tuple:
         """Handle 400 Bad Request errors."""
+        message = e.description if isinstance(e, HTTPException) and e.description else ErrorMessages.BAD_REQUEST
         return (
             jsonify(
                 {
                     "error": {
                         "code": 400,
                         "name": "Bad Request",
-                        "message": ErrorMessages.BAD_REQUEST,
+                        "message": message,
                     },
                 },
             ),
@@ -104,13 +105,14 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(NotFound)
     def not_found_error(e: HTTPException) -> tuple:
         """Handle 404 Not Found errors."""
+        message = e.description if isinstance(e, HTTPException) and e.description else ErrorMessages.NOT_FOUND
         return (
             jsonify(
                 {
                     "error": {
                         "code": 404,
                         "name": "Not Found",
-                        "message": ErrorMessages.NOT_FOUND,
+                        "message": message,
                     },
                 },
             ),

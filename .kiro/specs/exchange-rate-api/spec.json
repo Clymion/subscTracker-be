@@ -1,0 +1,22 @@
+{
+  "feature_name": "exchange-rate-api",
+  "created_at": "2025-09-27T12:28:33.343483",
+  "updated_at": "2025-09-27T13:02:15.195948",
+  "language": "ja",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": false
+    }
+  },
+  "ready_for_implementation": false
+}

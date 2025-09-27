@@ -59,3 +59,9 @@ class LabelHierarchyError(LabelError):
     """循環参照や深さ制限など、階層構造に関するエラーの例外。"""
 
     pass
+
+
+class ResourceNotFoundError(Exception):
+    """指定されたリソースが見つからない場合に発生する汎用例外。"""
+
+    pass
