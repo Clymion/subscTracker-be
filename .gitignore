@@ -35,3 +35,5 @@ repomix-output.xml
 
 # Project-specific ignores
 !docs/openapi/build/
+service_account_key.json
+credentials/subscTracker_adc.json
