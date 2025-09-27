@@ -88,3 +88,85 @@ class TestExchangeRateServiceGet:
             from_currency=from_currency,
             to_currency=to_currency,
         )
+
+@pytest.mark.unit
+class TestGetRatesForBaseCurrency:
+    """Test cases for the get_rates_for_base_currency method."""
+
+    def test_get_rates_for_base_currency_found(
+        self,
+        exchange_rate_service: ExchangeRateService,
+        mock_exchange_rate_repo: MagicMock,
+    ):
+        """Test that the service returns a dictionary of rates when the repository finds them."""
+        # Arrange
+        target_date = date(2025, 9, 27)
+        base_currency = "USD"
+        repo_results = [
+            ExchangeRate(from_currency="USD", to_currency="JPY", date=date(2025, 9, 26), rate=145.0),
+            ExchangeRate(from_currency="USD", to_currency="EUR", date=date(2025, 9, 27), rate=0.95),
+        ]
+        mock_exchange_rate_repo.find_rates_by_base_currency.return_value = repo_results
+
+        # Act
+        result = exchange_rate_service.get_rates_for_base_currency(
+            target_date=target_date,
+            base_currency=base_currency,
+            target_currencies=None,
+        )
+
+        # Assert
+        assert result == {"JPY": 145.0, "EUR": 0.95}
+        mock_exchange_rate_repo.find_rates_by_base_currency.assert_called_once_with(
+            target_date=target_date,
+            base_currency=base_currency,
+        )
+
+    def test_get_rates_for_base_currency_with_targets(
+        self,
+        exchange_rate_service: ExchangeRateService,
+        mock_exchange_rate_repo: MagicMock,
+    ):
+        """Test that the service correctly filters rates by target_currencies."""
+        # Arrange
+        target_date = date(2025, 9, 27)
+        base_currency = "USD"
+        target_currencies = ["JPY"]
+        repo_results = [
+            ExchangeRate(from_currency="USD", to_currency="JPY", date=date(2025, 9, 26), rate=145.0),
+            ExchangeRate(from_currency="USD", to_currency="EUR", date=date(2025, 9, 27), rate=0.95),
+        ]
+        mock_exchange_rate_repo.find_rates_by_base_currency.return_value = repo_results
+
+        # Act
+        result = exchange_rate_service.get_rates_for_base_currency(
+            target_date=target_date,
+            base_currency=base_currency,
+            target_currencies=target_currencies,
+        )
+
+        # Assert
+        assert result == {"JPY": 145.0}
+        mock_exchange_rate_repo.find_rates_by_base_currency.assert_called_once_with(
+            target_date=target_date,
+            base_currency=base_currency,
+        )
+
+    def test_get_rates_for_base_currency_not_found(
+        self,
+        exchange_rate_service: ExchangeRateService,
+        mock_exchange_rate_repo: MagicMock,
+    ):
+        """Test that ResourceNotFoundError is raised when no rates are found."""
+        # Arrange
+        target_date = date(2025, 9, 27)
+        base_currency = "USD"
+        mock_exchange_rate_repo.find_rates_by_base_currency.return_value = []
+
+        # Act & Assert
+        with pytest.raises(ResourceNotFoundError):
+            exchange_rate_service.get_rates_for_base_currency(
+                target_date=target_date,
+                base_currency=base_currency,
+                target_currencies=None,
+            )

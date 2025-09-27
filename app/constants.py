@@ -18,6 +18,9 @@ class ValidationConstants:
     # Email validation pattern
     EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
+    # Currency code validation
+    CURRENCY_CODE_LENGTH = 3
+
 
 class CurrencyConstants:
     """

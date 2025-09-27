@@ -41,6 +41,11 @@ File: `tests/unit/test_exchange_rate_repository.py`
   - **When**: `find_rate_by_date` is called.
   - **Then**: It returns `None`.
 
+- **`test_find_rates_by_base_currency`**:
+  - **Given**: Multiple rates for various currency pairs and dates exist in the database.
+  - **When**: `find_rates_by_base_currency` is called with a specific base currency and target date.
+  - **Then**: It returns a list containing only the most recent rate for each target currency, on or before the given date, for the specified base currency.
+
 ### Unit Tests - ExchangeRateService
 
 File: `tests/unit/test_exchange_rate_service.py`
@@ -55,30 +60,57 @@ File: `tests/unit/test_exchange_rate_service.py`
   - **When**: The service's `get_exchange_rate` method is called.
   - **Then**: The service raises a `ResourceNotFoundError`.
 
+- **`test_get_rates_for_base_currency_found`**:
+  - **Given**: The mocked repository returns a list of `ExchangeRate` objects.
+  - **When**: `get_rates_for_base_currency` is called.
+  - **Then**: It returns a dictionary of currency codes to rates.
+
+- **`test_get_rates_for_base_currency_with_targets`**:
+  - **Given**: The mocked repository returns a list of `ExchangeRate` objects.
+  - **When**: `get_rates_for_base_currency` is called with a list of target currencies.
+  - **Then**: It returns a dictionary containing only the specified target currencies.
+
+- **`test_get_rates_for_base_currency_not_found`**:
+  - **Given**: The mocked repository returns an empty list.
+  - **When**: `get_rates_for_base_currency` is called.
+  - **Then**: It raises a `ResourceNotFoundError`.
+
 ### Integration Tests - Exchange Rate API
 
 File: `tests/integration/test_exchange_rate_api.py`
 
-- **`test_get_rate_with_exact_date_returns_200`**:
-  - **Scenario**: A successful request for a date with an exact rate match.
-  - **Expected**: HTTP 200 OK with the correct rate in the response body.
+- **`test_get_rates_with_all_params_returns_200`**:
+  - **Scenario**: A successful request combining `date`, `base_currency`, and `target_currencies` parameters.
+  - **Expected**: HTTP 200 OK with correctly filtered rates based on all criteria.
 
-- **`test_get_rate_with_fallback_date_returns_200`**:
-  - **Scenario**: A successful request for a date that has no exact match, triggering the fallback logic.
-  - **Expected**: HTTP 200 OK with the most recent prior rate.
+- **`test_get_rates_with_base_currency_returns_200`**:
+  - **Scenario**: A successful request with a specific base currency.
+  - **Expected**: HTTP 200 OK with a dictionary of rates for that base currency.
 
-- **`test_get_rate_without_date_returns_most_recent_200`**:
-  - **Scenario**: A request where the `date` parameter is omitted.
-  - **Expected**: HTTP 200 OK with the most recent available rate for the currency pair.
+- **`test_get_rates_with_target_currencies_returns_200`**:
+  - **Scenario**: A successful request that filters for specific target currencies.
+  - **Expected**: HTTP 200 OK with a dictionary containing only the requested target currencies.
 
-- **`test_get_rate_not_found_returns_404`**:
-  - **Scenario**: A request for a currency pair and date for which no rate exists (not even in the past).
-  - **Expected**: HTTP 404 Not Found with a corresponding error message.
+- **`test_get_rates_with_specific_date_returns_200`**:
+  - **Scenario**: A successful request for a specific historical date.
+  - **Expected**: HTTP 200 OK with the rates from that date.
 
-- **`test_get_rate_missing_param_returns_400`**:
-  - **Scenario**: A request that is missing one of the required currency parameters (`from_currency` or `to_currency`).
-  - **Expected**: HTTP 400 Bad Request with a message indicating missing parameters.
+- **`test_get_rates_no_params_returns_defaults_200`**:
+  - **Scenario**: A request with no query parameters.
+  - **Expected**: HTTP 200 OK with default behavior (base=USD, latest date).
 
-- **`test_get_rate_invalid_date_format_returns_400`**:
-  - **Scenario**: A request with a malformed `date` parameter (e.g., `DD-MM-YYYY`).
-  - **Expected**: HTTP 400 Bad Request with a message indicating an invalid date format.
+- **`test_get_rates_invalid_date_format_returns_400`**:
+  - **Scenario**: A request with a malformed `date` parameter.
+  - **Expected**: HTTP 400 Bad Request with a relevant error message.
+
+- **`test_get_rates_invalid_currency_code_returns_400`**:
+  - **Scenario**: A request with an invalid `base_currency` or `target_currencies` code.
+  - **Expected**: HTTP 400 Bad Request with a relevant error message.
+
+- **`test_get_rates_not_found_returns_404`**:
+  - **Scenario**: A request for a base currency with no available rates.
+  - **Expected**: HTTP 404 Not Found.
+
+- **`test_get_rates_no_auth_token_returns_401`**:
+  - **Scenario**: An unauthenticated request (missing Authorization header) to the endpoint.
+  - **Expected**: HTTP 401 Unauthorized with a JSON error message.

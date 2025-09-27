@@ -11,7 +11,7 @@ from app.repositories.exchange_rate_repository import ExchangeRateRepository
 class ExchangeRateService:
     """Service for exchange rate business logic."""
 
-    def __init__(self, exchange_rate_repository: ExchangeRateRepository):
+    def __init__(self, exchange_rate_repository: ExchangeRateRepository) -> None:
         """
         Initialize the service with a repository.
 
@@ -48,3 +48,39 @@ class ExchangeRateService:
         if rate is None:
             raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
         return rate
+
+    def get_rates_for_base_currency(
+        self,
+        target_date: date,
+        base_currency: str,
+        target_currencies: list[str] | None,
+    ) -> dict[str, float]:
+        """
+        Get a dictionary of exchange rates for a specific date and base currency.
+
+        Args:
+            target_date: The target date for the exchange rates.
+            base_currency: The currency to convert from.
+            target_currencies: An optional list of target currencies to filter by.
+
+        Returns:
+            A dictionary mapping target currency codes to their rates.
+        """
+        rates = self.exchange_rate_repository.find_rates_by_base_currency(
+            target_date=target_date,
+            base_currency=base_currency,
+        )
+
+        if not rates:
+            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
+
+        rate_dict = {rate.to_currency: rate.rate for rate in rates}
+
+        if target_currencies:
+            rate_dict = {
+                currency: rate
+                for currency, rate in rate_dict.items()
+                if currency in target_currencies
+            }
+
+        return rate_dict

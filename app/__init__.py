@@ -1,5 +1,5 @@
 """Initialize the Flask application and its extensions."""
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
@@ -12,6 +12,7 @@ from app.api.v1.system import system_bp
 from app.common.error_handlers import register_error_handlers
 from app.common.logging_setup import setup_logging
 from app.config import AppConfig, TestConfig, get_config
+from app.constants import ErrorMessages
 from app.models import db
 
 
@@ -26,7 +27,38 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     db.init_app(app)
 
     # Initialize JWT manager
-    jwt = JWTManager(app)
+    jwt = JWTManager()
+
+    @jwt.unauthorized_loader
+    def unauthorized_callback(_reason: str) -> tuple:
+        return jsonify({
+            "error": {
+                "code": 401,
+                "name": "Unauthorized",
+                "message": "Missing Authorization Header",
+            },
+        }), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(_error: str) -> tuple:
+        return jsonify({
+            "error": {
+                "code": 422,
+                "name": "Unprocessable Entity",
+                "message": "Token is invalid or malformed.",
+            },
+        }), 422
+
+    @jwt.expired_token_loader
+    def expired_token_callback(_jwt_header: dict, _jwt_payload: dict) -> tuple:
+        return jsonify({
+            "error": {
+                "code": 401,
+                "name": "Unauthorized",
+                "message": ErrorMessages.TOKEN_EXPIRED,
+            },
+        }), 401
+
     jwt.init_app(app)
 
     # Enable CORS
