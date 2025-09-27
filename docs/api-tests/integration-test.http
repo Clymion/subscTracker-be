@@ -222,34 +222,52 @@ Authorization: Bearer {{accessToken}}
 
 ###
 # ========================================
-# 4. 後片付け (Cleanup)
+# 4. 為替レート取得 (Exchange Rate)
 # ========================================
 
-### 4.1. ラベルの削除 (子 → 親の順番)
+### 4.1. 最新の為替レートを取得
+# JPYを基準通貨として、取得可能な全為替レートを取得する
+GET {{host}}/api/v1/exchange-rates?base_currency=JPY
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 4.2. 過去の日付の為替レートを取得
+# 2025-01-01のUSDを基準通貨とした、JPYとKRWの為替レートを取得
+GET {{host}}/api/v1/exchange-rates?date=2025-09-21&base_currency=USD&target_currency=JPY
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+
+###
+# ========================================
+# 5. 後片付け (Cleanup)
+# ========================================
+
+### 5.1. ラベルの削除 (子 → 親の順番)
 DELETE {{host}}/api/v1/labels/{{labelId_child}}
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
-### 4.2. 親ラベルの削除
+### 5.2. 親ラベルの削除
 DELETE {{host}}/api/v1/labels/{{labelId_parent}}
 Authorization: Bearer {{accessToken}}
 
 
 ###
 # ========================================
-# 5. 異常系テスト (Error Cases)
+# 6. 異常系テスト (Error Cases)
 # ========================================
 
-### 5.1. 認証トークンなしでのアクセス
+### 6.1. 認証トークンなしでのアクセス
 GET {{host}}/api/v1/labels
 Content-Type: application/json
 
-### 5.2. 間違ったトークンでのアクセス
+### 6.2. 間違ったトークンでのアクセス
 GET {{host}}/api/v1/subscriptions
 Authorization: Bearer invalid-token
 Content-Type: application/json
 
-### 5.3. 存在しないURLへのアクセス
+### 6.3. 存在しないURLへのアクセス
 GET {{host}}/api/v1/nonexistent-endpoint
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
