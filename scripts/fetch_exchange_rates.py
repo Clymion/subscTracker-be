@@ -5,6 +5,7 @@
 データベースに保存します。
 """
 
+import argparse
 import datetime
 import logging
 import os
@@ -32,9 +33,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = PROJECT_ROOT / "instance" / "app.db"
 
 # 為替レート取得API
-API_URL_TEMPLATE = "https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
+API_URL_LATEST_TEMPLATE = "https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
+API_URL_HISTORY_TEMPLATE = "https://v6.exchangerate-api.com/v6/{api_key}/history/{base_currency}/{year}/{month}/{day}"
 # 取得対象の通貨リスト
-TARGET_CURRENCIES = ["JPY", "USD", "EUR", "CNY"]
+TARGET_CURRENCIES = ["JPY", "USD", "EUR"]
 # APIのソース名
 EXCHANGE_RATE_SOURCE = "exchangerate-api.com"
 
@@ -115,19 +117,47 @@ def fetch_exchange_rates(
     api_key: str,
 ) -> list[dict[str, Any]]:
     """
-    TARGET_CURRENCIESの全ての通貨を基準として為替レートをAPIから取得します。
+    指定された日付の為替レートをAPIから取得します。`TARGET_CURRENCIES`の全ての通貨を基準として為替レートを取得します。
 
     Args:
-        date: 'YYYY-MM-DD'形式の日付文字列（DB保存用）
+        date: 'YYYY-MM-DD'形式の日付文字列
         api_key: 為替レート取得APIのキー
 
     Returns:
         'insert_rates_to_db'が期待する形式の辞書データのリスト
     """
     rates_data_list: list[dict[str, Any]] = []
+
+    # 日付の妥当性チェック
+    try:
+        date_obj = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+        today = datetime.datetime.now(datetime.timezone.utc).date()
+        if date_obj > today:
+            logging.error("未来の日付の為替レートは取得できません。: %s", date)
+            return []
+    except ValueError:
+        logging.error("日付のフォーマットが不正です: %s。YYYY-MM-DD形式で指定してください。", date)
+        return []
+
+    is_today = date_obj == today
+
     for base_currency in TARGET_CURRENCIES:
-        logging.info("%s を基準通貨としてレートを取得します。", base_currency)
-        url = API_URL_TEMPLATE.format(api_key=api_key, base_currency=base_currency)
+        logging.info("%s を基準通貨として %s のレートを取得します。", base_currency, date)
+
+        if is_today:
+            url = API_URL_LATEST_TEMPLATE.format(
+                api_key=api_key, base_currency=base_currency
+            )
+        else:
+            year, month, day = date.split("-")
+            url = API_URL_HISTORY_TEMPLATE.format(
+                api_key=api_key,
+                base_currency=base_currency,
+                year=year,
+                month=month,
+                day=day,
+            )
+
         try:
             response = requests.get(url, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
@@ -232,6 +262,17 @@ def main() -> None:
     為替レートを取得し、データベースに保存します。
     cronやCloud Run Jobで実行されることを想定しています。
     """
+    # --- 引数パーサーの設定 ---
+    parser = argparse.ArgumentParser(description="為替レート取得スクリプト")
+    parser.add_argument(
+        "--date",
+        type=str,
+        default=datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+        help="取得対象の日付 (YYYY-MM-DD形式)。指定しない場合は実行当日の日付になります。",
+    )
+    args = parser.parse_args()
+    date_to_fetch = args.date
+
     # 1. APIキーを取得
     api_key = get_api_key()
     if not api_key:
@@ -239,7 +280,6 @@ def main() -> None:
         sys.exit(1)
 
     # 2. 為替レートを取得
-    date_to_fetch = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     logging.info("%s の為替レートを取得します...", date_to_fetch)
     all_rates_data = fetch_exchange_rates(date_to_fetch, api_key)
 

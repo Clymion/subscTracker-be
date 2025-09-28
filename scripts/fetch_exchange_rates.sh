@@ -21,5 +21,10 @@ fi
 python -m alembic current
 python -m alembic upgrade head
 
+DATE_ARG=""
+if [ -n "$1" ]; then
+  DATE_ARG="--date $1"
+fi
+
 # 目的のpythonスクリプトを実行
-litestream replicate -exec "python scripts/fetch_exchange_rates.py"
+litestream replicate -exec "python scripts/fetch_exchange_rates.py ${DATE_ARG}"
