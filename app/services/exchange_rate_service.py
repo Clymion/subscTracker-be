@@ -71,9 +71,6 @@ class ExchangeRateService:
             base_currency=base_currency,
         )
 
-        if not rates:
-            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
-
         rate_dict = {rate.to_currency: rate.rate for rate in rates}
 
         if target_currencies:
@@ -82,5 +79,13 @@ class ExchangeRateService:
                 for currency, rate in rate_dict.items()
                 if currency in target_currencies
             }
+
+        # Add the base currency with a rate of 1.0 if it was requested, or if no
+        # specific currencies were requested.
+        if not target_currencies or base_currency in target_currencies:
+            rate_dict[base_currency] = 1.0
+
+        if not rate_dict:
+            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
 
         return rate_dict
