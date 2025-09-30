@@ -209,7 +209,7 @@ class TestPaginateQueryParamsErrorHandling:
 
         # Act & Assert
         with pytest.raises(
-            PaginationError, match=ErrorMessages.PAGINATION_LIMIT_OFFSET_NOT_INTEGER
+            PaginationError, match=ErrorMessages.PAGINATION_LIMIT_OFFSET_NOT_INTEGER,
         ):
             paginate_query_params(args)
 
@@ -220,7 +220,7 @@ class TestPaginateQueryParamsErrorHandling:
 
         # Act & Assert
         with pytest.raises(
-            PaginationError, match=ErrorMessages.PAGINATION_LIMIT_OFFSET_NOT_INTEGER
+            PaginationError, match=ErrorMessages.PAGINATION_LIMIT_OFFSET_NOT_INTEGER,
         ):
             paginate_query_params(args)
 
@@ -249,7 +249,7 @@ class TestPaginateQueryParamsErrorHandling:
 
         # Act & Assert
         with pytest.raises(
-            PaginationError, match=ErrorMessages.PAGINATION_OFFSET_NEGATIVE
+            PaginationError, match=ErrorMessages.PAGINATION_OFFSET_NEGATIVE,
         ):
             paginate_query_params(args)
 
@@ -489,13 +489,13 @@ class TestResponseUtilsIntegration:
 
         # 2. Generate pagination metadata
         pagination_meta = pagination_metadata(
-            limit, offset, total_items, base_url, query_args
+            limit, offset, total_items, base_url, query_args,
         )
 
         # 3. Create success response
         response_data = {"items": mock_data}
         response, status_code = success_response(
-            response_data, {"pagination": pagination_meta}
+            response_data, {"pagination": pagination_meta},
         )
 
         # Assert

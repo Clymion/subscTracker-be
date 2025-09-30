@@ -49,6 +49,7 @@ class TestAppConfig:
     def test_default_values_applied_when_optional_vars_not_set(
         self,
         monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
     ) -> None:
         """Test that default values are applied when optional variables are not set."""
         # Arrange: Set only required variables
@@ -68,6 +69,9 @@ class TestAppConfig:
         monkeypatch.delenv("API_PORT", raising=False)
         monkeypatch.delenv("DEBUG", raising=False)
         monkeypatch.delenv("ENABLE_NEW_BILLING", raising=False)
+
+        # Isolate from project's .env file by changing the current directory
+        monkeypatch.chdir(tmp_path)
 
         # Act: Create config instance
         config = AppConfig()

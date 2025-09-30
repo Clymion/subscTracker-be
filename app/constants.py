@@ -18,6 +18,9 @@ class ValidationConstants:
     # Email validation pattern
     EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
+    # Currency code validation
+    CURRENCY_CODE_LENGTH = 3
+
 
 class CurrencyConstants:
     """
@@ -190,6 +193,9 @@ class ErrorMessages:
     LABEL_COLOR_REQUIRED = "Label color is required"
     INVALID_HEX_COLOR = "Invalid hex color format"
     LABEL_NAME_TOO_LONG = "Label name is too long"
+
+    # Exchange Rate errors
+    EXCHANGE_RATE_NOT_FOUND = "Exchange rate not found"
 
     # Payment errors
     PAYMENT_FAILED = "Payment processing failed"

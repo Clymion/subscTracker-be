@@ -21,17 +21,18 @@ if [ ! -f "$DB_FILE" ]; then
         fi
     else
         echo "Exiting without creating a new database."
-        exit 1
     fi
 fi
 
 # Apply migrations using Alembic (assuming alembic is configured)
 echo "Applying migrations to $DB_FILE..."
-alembic upgrade head
+litestream replicate -exec "python -m alembic upgrade head"
 
 if [ $? -eq 0 ]; then
     echo "Migrations applied successfully."
 else
     echo "Failed to apply migrations."
-  exit 1
+    exit 1
 fi
+
+litestream replicate

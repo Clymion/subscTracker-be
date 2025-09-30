@@ -35,3 +35,4 @@ repomix-output.xml
 
 # Project-specific ignores
 !docs/openapi/build/
+credentials/

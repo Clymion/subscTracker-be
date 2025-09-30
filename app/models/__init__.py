@@ -23,6 +23,7 @@ db = SQLAlchemy()
 
 # Import all models here to register them with SQLAlchemy
 from app.models.association_tables import subscription_labels
+from app.models.exchange_rate import ExchangeRate
 from app.models.label import Label
 from app.models.subscription import Subscription
 from app.models.user import User

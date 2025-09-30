@@ -54,10 +54,6 @@ def app(test_config: TestConfig) -> Generator[Flask, None, None]:
         },
     )
 
-    # Initialize JWT
-    jwt_manager = JWTManager()
-    jwt_manager.init_app(app)
-
     # Create database tables
     with app.app_context():
         _db.create_all()

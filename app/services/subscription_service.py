@@ -17,13 +17,8 @@ from app.exceptions import (
     SubscriptionNotFoundError,
     ValidationError,
 )
-
-# LabelモデルとLabelNotFoundErrorをインポートするのだ
-from app.models.label import Label
 from app.models.subscription import Subscription
-from app.repositories.label_repository import (
-    LabelRepository,
-)  # ラベルリポジトリもインポート
+from app.repositories.label_repository import LabelRepository
 from app.repositories.subscription_repository import SubscriptionRepository
 
 logger = get_logger(__name__)
@@ -120,14 +115,14 @@ class SubscriptionService:
                     l_id = int(label_id)
                 except (ValueError, TypeError):
                     raise ValidationError(
-                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID."
+                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID.",
                     )
 
                 label = self.label_repository.find_by_id(l_id)
                 # ラベルが存在するか、そして自分のものかを確認するのだ
                 if not label or label.user_id != user_id:
                     raise ValidationError(
-                        f"Label with ID {l_id} not found or access denied."
+                        f"Label with ID {l_id} not found or access denied.",
                     )
                 new_labels.append(label)
             subscription.labels = new_labels
@@ -156,7 +151,7 @@ class SubscriptionService:
                     update_data[key] = datetime.fromisoformat(update_data[key]).date()
                 except ValueError:
                     raise ValidationError(
-                        f"Invalid date format for {key}. Use YYYY-MM-DD."
+                        f"Invalid date format for {key}. Use YYYY-MM-DD.",
                     )
 
         # ラベルの更新
@@ -170,12 +165,12 @@ class SubscriptionService:
                     logger.debug(f"Processing label ID: {l_id}")
                 except (ValueError, TypeError):
                     raise ValidationError(
-                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID."
+                        f"Invalid label ID format: '{label_id}'. Please provide a numeric ID.",
                     )
                 label = self.label_repository.find_by_id(l_id)
                 if not label or label.user_id != user_id:
                     raise ValidationError(
-                        f"Label with ID {label_id} not found or access denied."
+                        f"Label with ID {label_id} not found or access denied.",
                     )
                 new_labels.append(label)
             subscription.labels = new_labels

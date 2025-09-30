@@ -69,6 +69,8 @@ paths:
   # settings.paths.yaml
   /users/{userId}/settings/currency:
     $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1settings~1currency'
+  /exchange-rates:
+    $ref: './paths/settings.paths.yaml#/~1exchange-rates'
   /exchange-rates/refresh:
     $ref: './paths/settings.paths.yaml#/~1exchange-rates~1refresh'
   /users/{userId}/payment-methods:

@@ -69,6 +69,54 @@
         $ref: '../components/responses.yaml#/Forbidden'
       '404':
         $ref: '../components/responses.yaml#/NotFound'
+/exchange-rates:
+  get:
+    tags:
+      - 通貨設定
+    summary: 為替レートの取得
+    description: 指定された日付と通貨の為替レートを取得します。日付を指定しない場合は最新のレートを返します。
+    operationId: getExchangeRates
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: date
+        in: query
+        description: 取得する為替レートの日付 (YYYY-MM-DD)。指定しない場合は最新の日付。
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: base_currency
+        in: query
+        description: 基準とする通貨コード (3文字のISO 4217コード)。指定しない場合はユーザーの基本設定通貨。
+        required: false
+        schema:
+          type: string
+          example: 'JPY'
+      - name: target_currencies
+        in: query
+        description: 取得したい通貨コードのカンマ区切りリスト。指定しない場合は全ての利用可能な通貨。
+        required: false
+        schema:
+          type: string
+          example: 'USD,EUR,KRW'
+    responses:
+      '200':
+        description: 為替レートの取得に成功しました
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '../components/schemas/exchange_rate.schemas.yaml#/ExchangeRate'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
 '/exchange-rates/refresh':
   post:
     tags:
