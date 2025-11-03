@@ -17,6 +17,7 @@ Kiro-style Spec Driven Development implementation using gemini cli slash command
 ### Active Specifications
 - `exchange-rate-api`: 為替レート取得API
 - `history-payment-api`: 支払履歴関連のAPIの実装
+- `payment-history-registration-batch`: 支払履歴の登録を行うバッチの実装
 - Check `.kiro/specs/` for active specifications
 - Use `/kiro:spec-status [feature-name]` to check progress
 
