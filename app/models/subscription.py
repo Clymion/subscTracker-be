@@ -95,6 +95,7 @@ class Subscription(db.Model):
         back_populates="subscriptions",
         lazy="select",
     )
+    payment_histories = relationship("PaymentHistory", back_populates="subscription")
 
     def __repr__(self) -> str:
         """String representation of the subscription."""

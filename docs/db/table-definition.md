@@ -76,7 +76,9 @@
 | subscription_id | サブスクリプションID | INT | - | O | O | - | 支払い対象のサブスクリプションID | SUBSCRIPTIONS.subscription_id参照 |
 | amount | 支払額 | REAL | - | - | O | - | 支払い金額 | - |
 | currency | 通貨 | STRING | - | - | O | - | 支払い通貨 | USD または JPY |
-| rate_id | レートID | INT | - | O | O | - | 適用された為替レートのID | EXCHANGE_RATES.rate_id参照 |
+| rate_from_currency | レート変換元通貨 | STRING | - | O | O | - | 適用された為替レートの変換元通貨 | EXCHANGE_RATES.from_currency参照 |
+| rate_to_currency | レート変換先通貨 | STRING | - | O | O | - | 適用された為替レートの変換先通貨 | EXCHANGE_RATES.to_currency参照 |
+| rate_date | レート基準日 | DATE | - | O | O | - | 適用された為替レートの基準日 | EXCHANGE_RATES.date参照 |
 | payment_method | 支払方法 | STRING | - | - | O | - | 実際の支払方法 | - |
 | payment_date | 支払日 | DATE | - | - | O | - | 実際の支払日 | - |
 | created_at | 作成日時 | TIMESTAMP | - | - | O | - | レコード作成日時 | - |
@@ -183,7 +185,7 @@
 | SUBSCRIPTIONS | user_id | USERS | user_id | CASCADE |
 | PAYMENT_HISTORY | user_id | USERS | user_id | CASCADE |
 | PAYMENT_HISTORY | subscription_id | SUBSCRIPTIONS | subscription_id | SET NULL |
-| PAYMENT_HISTORY | rate_id | EXCHANGE_RATES | rate_id | RESTRICT |
+| PAYMENT_HISTORY | (rate_from_currency, rate_to_currency, rate_date) | EXCHANGE_RATES | (from_currency, to_currency, date) | RESTRICT |
 | NOTIFICATIONS | user_id | USERS | user_id | CASCADE |
 | NOTIFICATIONS | subscription_id | SUBSCRIPTIONS | subscription_id | CASCADE |
 | LABELS | user_id | USERS | user_id | CASCADE |

@@ -42,6 +42,7 @@ class User(db.Model):
         cascade="all, delete-orphan",
     )
     labels = relationship("Label", back_populates="user", cascade="all, delete-orphan")
+    payment_histories = relationship("PaymentHistory", back_populates="user", cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
         """Set the user's password by hashing it."""

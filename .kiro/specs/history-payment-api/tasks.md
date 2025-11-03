@@ -1,12 +1,12 @@
 # Implementation Plan: history-payment-api (TDD)
 
-- [ ] 1. データベースのセットアップ
-- [ ] 1.1 `PaymentHistory`モデルの作成
+- [x] 1. データベースのセットアップ
+- [x] 1.1 `PaymentHistory`モデルの作成
   - `app/models/payment_history.py` を新規作成します。
   - 設計書に従い、`payment_histories`テーブルに対応するSQLAlchemyモデルを定義します。
   - _Requirements: 1.3, 1.4_
 
-- [ ] 1.2 データベースマイグレーションの実行
+- [x] 1.2 データベースマイグレーションの実行
   - Alembicを使用して、`payment_histories`テーブルを作成するための新しいマイグレーションスクリプトを生成・実行します。
   - _Requirements: 全ての要件の基礎_
 
