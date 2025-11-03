@@ -72,15 +72,14 @@
 | 物理名 | 論理名 | データ型 | PK | FK | NOT NULL | 制約 | 説明 | 備考 |
 |--------|--------|----------|-----|-----|----------|------|------|------|
 | payment_id | 支払いID | INT | O | - | O | AUTO_INCREMENT | 支払いを一意に識別するID | - |
+| user_id | ユーザーID | INT | - | O | O | - | 支払ったユーザーのID | USERS.user_id参照 |
 | subscription_id | サブスクリプションID | INT | - | O | O | - | 支払い対象のサブスクリプションID | SUBSCRIPTIONS.subscription_id参照 |
-| amount | 支払額 | INT | - | - | O | - | 支払い金額 | - |
+| amount | 支払額 | REAL | - | - | O | - | 支払い金額 | - |
 | currency | 通貨 | STRING | - | - | O | - | 支払い通貨 | USD または JPY |
 | rate_id | レートID | INT | - | O | O | - | 適用された為替レートのID | EXCHANGE_RATES.rate_id参照 |
 | payment_method | 支払方法 | STRING | - | - | O | - | 実際の支払方法 | - |
 | payment_date | 支払日 | DATE | - | - | O | - | 実際の支払日 | - |
-| created_by | 作成者 | INT | - | O | O | - | レコード作成者のID | USERS.user_id参照 |
 | created_at | 作成日時 | TIMESTAMP | - | - | O | - | レコード作成日時 | - |
-| updated_by | 更新者 | INT | - | O | O | - | レコード更新者のID | USERS.user_id参照 |
 | updated_at | 更新日時 | TIMESTAMP | - | - | O | - | レコード更新日時 | - |
 
 ### EXCHANGE_RATES（為替レート）
@@ -164,9 +163,10 @@
 
 | インデックス名 | 対象カラム | タイプ | 説明 |
 |--------------|-----------|-------|------|
+| idx_payment_user_id | user_id | BTREE | ユーザー別の支払い履歴検索用 |
 | idx_payment_subscription_id | subscription_id | BTREE | サブスクリプション別支払い履歴検索用 |
 | idx_payment_date | payment_date | BTREE | 支払い日による検索用 |
-| idx_payment_pagination | subscription_id, payment_date | BTREE | ページネーション用（支払い日時順） |
+| idx_payment_pagination | user_id, payment_date | BTREE | ページネーション用（支払い日時順） |
 
 ### NOTIFICATIONS テーブル
 
@@ -181,9 +181,8 @@
 | テーブル | 外部キー | 参照テーブル | 参照カラム | 削除時動作 |
 |---------|---------|------------|----------|----------|
 | SUBSCRIPTIONS | user_id | USERS | user_id | CASCADE |
-| PAYMENT_HISTORY | subscription_id | SUBSCRIPTIONS | subscription_id | CASCADE |
-| PAYMENT_HISTORY | created_by | USERS | user_id | RESTRICT |
-| PAYMENT_HISTORY | updated_by | USERS | user_id | RESTRICT |
+| PAYMENT_HISTORY | user_id | USERS | user_id | CASCADE |
+| PAYMENT_HISTORY | subscription_id | SUBSCRIPTIONS | subscription_id | SET NULL |
 | PAYMENT_HISTORY | rate_id | EXCHANGE_RATES | rate_id | RESTRICT |
 | NOTIFICATIONS | user_id | USERS | user_id | CASCADE |
 | NOTIFICATIONS | subscription_id | SUBSCRIPTIONS | subscription_id | CASCADE |

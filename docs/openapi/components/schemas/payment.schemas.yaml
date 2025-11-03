@@ -7,9 +7,6 @@ Payment:
     subscription_id:
       type: string
       description: サブスクリプションID
-    subscription_name:
-      type: string
-      description: サブスクリプション名
     amount:
       type: number
       description: 支払額
@@ -29,7 +26,6 @@ Payment:
   required:
     - id
     - subscription_id
-    - subscription_name
     - amount
     - currency
     - payment_date
