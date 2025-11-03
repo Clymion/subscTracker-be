@@ -7,6 +7,7 @@ from app.api.v1.auth import auth_bp
 from app.api.v1.exchange_rate import exchange_rate_bp
 from app.api.v1.label import label_bp
 from app.api.v1.subscription import subscription_bp
+from app.api.v1.payment_history import payment_history_bp
 from app.api.v1.swagger import swagger_spec_bp, swagger_ui_bp
 from app.api.v1.system import system_bp
 from app.common.error_handlers import register_error_handlers
@@ -75,6 +76,7 @@ def create_app(config_obj: AppConfig | TestConfig | None = None) -> Flask:
     app.register_blueprint(subscription_bp, url_prefix="/api/v1")
     app.register_blueprint(label_bp, url_prefix="/api/v1")
     app.register_blueprint(exchange_rate_bp, url_prefix="/api/v1")
+    app.register_blueprint(payment_history_bp, url_prefix="/api/v1")
 
     # OpenAPI仕様書(JSON)を配信するBlueprintを登録
     app.register_blueprint(swagger_spec_bp, url_prefix="/api/v1")
