@@ -80,12 +80,14 @@ class ExchangeRateService:
                 if currency in target_currencies
             }
 
+        # If no rates are found and the base currency itself is not a target,
+        # then we should raise a not found error.
+        if not rate_dict and (not target_currencies or base_currency not in target_currencies):
+            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
+
         # Add the base currency with a rate of 1.0 if it was requested, or if no
         # specific currencies were requested.
         if not target_currencies or base_currency in target_currencies:
             rate_dict[base_currency] = 1.0
-
-        if not rate_dict:
-            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
 
         return rate_dict
