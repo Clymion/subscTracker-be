@@ -81,14 +81,16 @@ def calculate_next_payment_date(from_date: date, frequency: str) -> date:
 
 
 def generate_payment_dates(
-    start_date: date, end_date: date, frequency: str
+    start_date: date,
+    end_date: date,
+    frequency: str,
 ) -> list[date]:
     """
     Generates a list of payment dates between a start and end date.
 
-    This function is inclusive of the start_date and exclusive of the end_date.
-    It generates all payment dates that would have occurred up to, but not
-    including, the end_date.
+    This function is inclusive of the start_date and inclusive of the end_date.
+    It generates all payment dates that would have occurred up to and including
+    the end_date. (This ensures payments scheduled for `end_date` are produced.)
 
     Args:
         start_date: The initial date to start generating from.

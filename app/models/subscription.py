@@ -54,7 +54,9 @@ class Subscription(db.Model):
 
     # Payment schedule
     initial_payment_date: Mapped[date] = mapped_column(Date, nullable=False)
-    next_payment_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    next_payment_date: Mapped[date | None] = mapped_column(
+        Date, nullable=True, index=True
+    )
     payment_frequency: Mapped[str] = mapped_column(String(20), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
 
@@ -114,7 +116,11 @@ class Subscription(db.Model):
             "price": self.price,
             "currency": self.currency,
             "initial_payment_date": self.initial_payment_date.isoformat(),
-            "next_payment_date": self.next_payment_date.isoformat(),
+            "next_payment_date": (
+                self.next_payment_date.isoformat()
+                if self.next_payment_date is not None
+                else None
+            ),
             "payment_frequency": self.payment_frequency,
             "payment_method": self.payment_method,
             "status": self.status,

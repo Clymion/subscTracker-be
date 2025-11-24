@@ -1,27 +1,16 @@
 import argparse
+import fcntl
 import logging
 import os
 import sys
-from datetime import date
-
-from flask import Flask
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app
 from app.models import db
-from app.models.exchange_rate import ExchangeRate
-from app.models.label import Label
-from app.models.payment_history import PaymentHistory
-from app.models.subscription import Subscription
 
 # Explicitly import all models to ensure they are registered with SQLAlchemy
-from app.models.user import User
-from app.repositories.exchange_rate_repository import ExchangeRateRepository
-from app.repositories.payment_history_repository import PaymentHistoryRepository
-from app.repositories.subscription_repository import SubscriptionRepository
-from app.services.exchange_rate_service import ExchangeRateService
 from app.services.payment_registration_batch_service import (
     PaymentRegistrationBatchService,
 )
@@ -51,46 +40,69 @@ def parse_args():
 def run_batch() -> argparse.NoReturn:
     """Run the payment registration batch script."""
     args = parse_args()
-    app = create_app()
+    # Acquire an exclusive filesystem lock to prevent concurrent executions
+    lock_path = "/tmp/register_payment_histories.lock"
+    lock_file = open(lock_path, "w")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        logger.error(
+            "Another instance of the payment registration batch is already running. Exiting.",
+        )
+        sys.exit(1)
 
-    with app.app_context():
-        # If running in a test environment with an in-memory DB, create tables.
-        if app.config["TESTING"] and "sqlite:///:memory:" in str(
-            app.config["SQLALCHEMY_DATABASE_URI"],
-        ):
-            db.create_all()
+    try:
+        app = create_app()
 
-        logger.info("Starting payment registration batch script.")
+        with app.app_context():
+            # If running in a test environment with an in-memory DB, create tables.
+            if app.config["TESTING"] and "sqlite:///:memory:" in str(
+                app.config["SQLALCHEMY_DATABASE_URI"],
+            ):
+                db.create_all()
 
-        # Instantiate service
-        batch_service = PaymentRegistrationBatchService()
+            logger.info("Starting payment registration batch script.")
 
-        subscription_ids = None
-        if args.subscription_ids:
-            try:
-                subscription_ids = [
-                    int(s_id.strip()) for s_id in args.subscription_ids.split(",")
-                ]
-                logger.info(f"Processing specific subscription IDs: {subscription_ids}")
-            except ValueError:
-                logger.error(
-                    "Invalid subscription IDs provided. Please provide a comma-separated list of integers."
+            # Instantiate service
+            batch_service = PaymentRegistrationBatchService()
+
+            subscription_ids = None
+            if args.subscription_ids:
+                try:
+                    subscription_ids = [
+                        int(s_id.strip()) for s_id in args.subscription_ids.split(",")
+                    ]
+                    logger.info(
+                        f"Processing specific subscription IDs: {subscription_ids}",
+                    )
+                except ValueError:
+                    logger.error(
+                        "Invalid subscription IDs provided. Please provide a comma-separated list of integers.",
+                    )
+                    sys.exit(1)
+
+            result = batch_service.execute(subscription_ids=subscription_ids)
+
+            if result.is_ok():
+                summary = result.unwrap()
+                logger.info(
+                    f"Batch finished: Processed={summary.processed}, Success={summary.success}, Failed={summary.failed}",
                 )
+                # In a real scenario, you might want a different exit code based on summary.
+                sys.exit(0)
+            else:
+                error = result.unwrap_err()
+                logger.error(f"Batch failed with an unhandled error: {error}")
                 sys.exit(1)
-
-        result = batch_service.execute(subscription_ids=subscription_ids)
-
-        if result.is_ok():
-            summary = result.unwrap()
-            logger.info(
-                f"Batch finished: Processed={summary.processed}, Success={summary.success}, Failed={summary.failed}"
-            )
-            # In a real scenario, you might want a different exit code based on summary.
-            sys.exit(0)
-        else:
-            error = result.unwrap_err()
-            logger.error(f"Batch failed with an unhandled error: {error}")
-            sys.exit(1)
+    finally:
+        try:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            lock_file.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

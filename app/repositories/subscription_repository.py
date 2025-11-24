@@ -124,14 +124,26 @@ class SubscriptionRepository:
                 Subscription.status == "active",
                 or_(
                     Subscription.next_payment_date <= target_date,
-                    (Subscription.next_payment_date == None) & (Subscription.initial_payment_date <= target_date)
-                )
+                    (Subscription.next_payment_date == None)
+                    & (Subscription.initial_payment_date <= target_date),
+                ),
             )
             .all()
         )
 
-    def update_next_payment_date(self, subscription: Subscription, new_date: date) -> None:
-        """Updates the next payment date for a given subscription."""
+    def update_next_payment_date(
+        self, subscription: Subscription, new_date: date, commit: bool = True
+    ) -> None:
+        """
+        Updates the next payment date for a given subscription.
+
+        Args:
+            subscription: the Subscription object to update.
+            new_date: the calculated next payment date.
+            commit: whether to commit the session. The batch service should
+                set commit=False to manage transaction boundaries itself.
+        """
         subscription.next_payment_date = new_date
         self.session.add(subscription)
-        self.session.commit()
+        if commit:
+            self.session.commit()

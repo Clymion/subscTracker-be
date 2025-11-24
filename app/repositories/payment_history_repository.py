@@ -18,7 +18,7 @@ class PaymentHistoryRepository:
     def _apply_filters(self, query: Any, filters: dict[str, Any]) -> Any:
         if filters.get("subscription_id") is not None:
             query = query.filter(
-                PaymentHistory.subscription_id == filters["subscription_id"]
+                PaymentHistory.subscription_id == filters["subscription_id"],
             )
         if filters.get("start_date") is not None:
             query = query.filter(PaymentHistory.payment_date >= filters["start_date"])
@@ -28,7 +28,7 @@ class PaymentHistoryRepository:
             query = query.filter(PaymentHistory.currency == filters["currency"])
         if filters.get("payment_method") is not None:
             query = query.filter(
-                PaymentHistory.payment_method == filters["payment_method"]
+                PaymentHistory.payment_method == filters["payment_method"],
             )
         return query
 
@@ -42,7 +42,7 @@ class PaymentHistoryRepository:
         offset: int,
     ) -> list[PaymentHistory]:
         query = self.session.query(PaymentHistory).filter(
-            PaymentHistory.user_id == user_id
+            PaymentHistory.user_id == user_id,
         )
         query = self._apply_filters(query, filters)
 
@@ -56,7 +56,7 @@ class PaymentHistoryRepository:
 
     def count_all_by_user_id(self, user_id: int, filters: dict[str, Any]) -> int:
         query = self.session.query(PaymentHistory.payment_id).filter(
-            PaymentHistory.user_id == user_id
+            PaymentHistory.user_id == user_id,
         )
         query = self._apply_filters(query, filters)
         return query.count()
@@ -71,8 +71,17 @@ class PaymentHistoryRepository:
         self.session.delete(payment_history)
         self.session.commit()
 
-    def bulk_save(self, payment_histories: list[PaymentHistory]) -> None:
-        """Saves a list of payment histories in a single transaction."""
+    def bulk_save(
+        self, payment_histories: list[PaymentHistory], commit: bool = True
+    ) -> None:
+        """
+        Saves a list of payment histories in a single transaction.
+
+        Args:
+            payment_histories: list of PaymentHistory objects to persist.
+            commit: whether to commit the session after saving. When False,
+                the caller (e.g. a batch service) is responsible for committing.
+        """
         # Try a performant bulk insert first. If that fails (e.g. due to
         # foreign key ordering issues), fall back to regular ORM persistence
         # which will honor relationships and insertion ordering.
@@ -96,7 +105,8 @@ class PaymentHistoryRepository:
         try:
             if engine is not None and "sqlite" in getattr(engine.dialect, "name", ""):
                 self.session.add_all(payment_histories)
-                self.session.commit()
+                if commit:
+                    self.session.commit()
                 return
         except Exception:
             try:
@@ -108,15 +118,18 @@ class PaymentHistoryRepository:
         # unit tests that assert on that call continue to pass.
         if MagicMock is not None and isinstance(self.session, MagicMock):
             self.session.bulk_save_objects(payment_histories)
-            self.session.commit()
+            if commit:
+                self.session.commit()
             return
 
         try:
             self.session.bulk_save_objects(payment_histories)
-            self.session.commit()
+            if commit:
+                self.session.commit()
             return
         except Exception:
             try:
+                # Only rollback if a commit was attempted (safe to call anyway)
                 self.session.rollback()
             except Exception:
                 pass
@@ -124,7 +137,8 @@ class PaymentHistoryRepository:
         # Fallback: use ORM add_all which respects insertion ordering
         try:
             self.session.add_all(payment_histories)
-            self.session.commit()
+            if commit:
+                self.session.commit()
             return
         except Exception:
             try:
@@ -134,7 +148,8 @@ class PaymentHistoryRepository:
             raise
 
     def find_latest_by_subscription_id(
-        self, subscription_id: int
+        self,
+        subscription_id: int,
     ) -> PaymentHistory | None:
         """
         Finds the most recent payment history for a given subscription.
