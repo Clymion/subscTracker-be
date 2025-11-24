@@ -116,7 +116,7 @@ class TestGetRatesForBaseCurrency:
         )
 
         # Assert
-        assert result == {"JPY": 145.0, "EUR": 0.95}
+        assert result == {"JPY": 145.0, "EUR": 0.95, "USD": 1.0}
         mock_exchange_rate_repo.find_rates_by_base_currency.assert_called_once_with(
             target_date=target_date,
             base_currency=base_currency,

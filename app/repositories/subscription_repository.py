@@ -5,6 +5,7 @@ This module provides a repository class for abstracting data access logic
 for the Subscription model, separating business logic from data persistence.
 """
 
+from datetime import date
 from typing import Any
 
 from sqlalchemy import asc, desc
@@ -105,3 +106,44 @@ class SubscriptionRepository:
         """Delete a subscription."""
         self.session.delete(subscription)
         self.session.commit()
+
+    def find_due_subscriptions(self, target_date: date) -> list[Subscription]:
+        """
+        Finds active subscriptions that are due for payment on or before the target date.
+
+        This includes:
+        1. Subscriptions where `next_payment_date` is on or before `target_date`.
+        2. Subscriptions where `next_payment_date` is `NULL` and `initial_payment_date`
+           is on or before `target_date`.
+        """
+        from sqlalchemy import or_
+
+        return (
+            self.session.query(Subscription)
+            .filter(
+                Subscription.status == "active",
+                or_(
+                    Subscription.next_payment_date <= target_date,
+                    (Subscription.next_payment_date == None)
+                    & (Subscription.initial_payment_date <= target_date),
+                ),
+            )
+            .all()
+        )
+
+    def update_next_payment_date(
+        self, subscription: Subscription, new_date: date, commit: bool = True
+    ) -> None:
+        """
+        Updates the next payment date for a given subscription.
+
+        Args:
+            subscription: the Subscription object to update.
+            new_date: the calculated next payment date.
+            commit: whether to commit the session. The batch service should
+                set commit=False to manage transaction boundaries itself.
+        """
+        subscription.next_payment_date = new_date
+        self.session.add(subscription)
+        if commit:
+            self.session.commit()

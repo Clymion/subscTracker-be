@@ -1,0 +1,177 @@
+# REST Client for VSCode
+# Payment History API Integration Test Scenarios
+
+# ----------------------------------------
+# 変数定義
+# ----------------------------------------
+@host = http://localhost:5000
+# @host = https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app
+
+@email = payment-user@example.com
+@password = StrongPassword123!
+@username = payment-user
+
+@accessToken =
+@refreshToken =
+@userId =
+
+@subscriptionId_1 =
+@subscriptionId_2 =
+
+###
+# ========================================
+# 1. 認証フロー (Authentication Flow)
+# ========================================
+
+### 1.1. ユーザー新規登録
+# @name register
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "confirm_password": "{{password}}",
+  "base_currency": "JPY"
+}
+
+### 1.2. ログイン
+# 登録した情報でログインし、新しいトークンを取得
+# @name login
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# レスポンスからトークンを更新
+@accessToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refresh_token}}
+@userId = {{login.response.body.data.user.user_id}}
+
+
+###
+# ========================================
+# 2. テストデータ準備 (Subscription)
+# ========================================
+
+### 2.1. サブスクリプションの作成 1
+# @name createSubscription1
+POST {{host}}/api/v1/subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Netflix",
+  "price": 1980,
+  "currency": "JPY",
+  "initial_payment_date": "2024-01-15",
+  "payment_frequency": "monthly",
+  "payment_method": "credit_card",
+  "status": "active",
+  "url": "https://www.netflix.com",
+  "notes": "プレミアムプラン"
+}
+
+###
+@subscriptionId_1 = {{createSubscription1.response.body.data.subscription_id}}
+
+### 2.2. サブスクリプションの作成 2
+# @name createSubscription2
+POST {{host}}/api/v1/subscriptions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Spotify",
+  "price": 980,
+  "currency": "JPY",
+  "initial_payment_date": "2024-02-01",
+  "payment_frequency": "monthly",
+  "payment_method": "paypal",
+  "status": "active",
+  "url": "https://www.spotify.com",
+  "notes": "個人プラン"
+}
+
+###
+@subscriptionId_2 = {{createSubscription2.response.body.data.subscription_id}}
+
+
+###
+# ========================================
+# 3. 支払履歴API (Payment History API)
+# ========================================
+
+### 3.1. 支払履歴一覧の取得 (全件)
+# 支払履歴はサブスクリプション作成時に自動生成される
+GET {{host}}/api/v1/payments
+Authorization: Bearer {{accessToken}}
+
+### 3.2. フィルタリング: subscription_id
+# Netflixの支払履歴のみ取得
+GET {{host}}/api/v1/payments?subscription_id={{subscriptionId_1}}
+Authorization: Bearer {{accessToken}}
+
+### 3.3. フィルタリング: 日付範囲
+# 2024年2月以降の支払履歴を取得
+GET {{host}}/api/v1/payments?start_date=2024-02-01
+Authorization: Bearer {{accessToken}}
+
+### 3.4. フィルタリング: 支払い方法
+# PayPalでの支払履歴のみ取得
+GET {{host}}/api/v1/payments?payment_method=paypal
+Authorization: Bearer {{accessToken}}
+
+### 3.5. ページネーション
+# 2件目から1件取得
+GET {{host}}/api/v1/payments?limit=1&offset=1
+Authorization: Bearer {{accessToken}}
+
+### 3.6. ソート
+# 金額の昇順でソート
+GET {{host}}/api/v1/payments?sort_by=amount&sort_order=asc
+Authorization: Bearer {{accessToken}}
+
+### 3.7. 組み合わせ
+# Netflixの履歴を、日付の昇順で2件目から1件取得
+GET {{host}}/api/v1/payments?subscription_id={{subscriptionId_1}}&sort_by=payment_date&sort_order=asc&limit=1&offset=1
+Authorization: Bearer {{accessToken}}
+
+###
+# ========================================
+# 4. 異常系テスト (Error Cases)
+# ========================================
+
+### 4.1. 認証トークンなしでのアクセス
+GET {{host}}/api/v1/payments
+Content-Type: application/json
+
+### 4.2. 不正なソートカラムを指定
+GET {{host}}/api/v1/payments?sort_by=invalid_column
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+###
+# ========================================
+# 5. 後片付け (Cleanup)
+# ========================================
+
+### 5.1. サブスクリプションの削除 1
+# NOTE: 支払履歴はサブスクリプションに紐付いているため、サブスクリプションを削除すれば履歴も削除される想定
+DELETE {{host}}/api/v1/subscriptions/{{subscriptionId_1}}
+Authorization: Bearer {{accessToken}}
+
+### 5.2. サブスクリプションの削除 2
+DELETE {{host}}/api/v1/subscriptions/{{subscriptionId_2}}
+Authorization: Bearer {{accessToken}}
+
+### 5.3. ユーザーの削除
+# NOTE: このAPIはまだ実装されていない可能性があります
+DELETE {{host}}/api/v1/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
