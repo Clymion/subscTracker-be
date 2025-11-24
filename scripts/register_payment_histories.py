@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import fcntl
 import logging
@@ -37,7 +39,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_batch() -> argparse.NoReturn:
+def run_batch() -> None:
     """Run the payment registration batch script."""
     args = parse_args()
     # Acquire an exclusive filesystem lock to prevent concurrent executions

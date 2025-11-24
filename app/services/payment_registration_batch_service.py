@@ -131,13 +131,16 @@ class PaymentRegistrationBatchService:
                             )
                             self.session.add(synthetic)
                             try:
-                                # Ensure the synthetic row is written within the
-                                # current transaction so FK constraints are satisfied
-                                # when inserting PaymentHistory rows.
-                                self.session.flush()
+                                # Persist the synthetic rate immediately so the
+                                # FK reference from PaymentHistory can be satisfied.
+                                # This sacrifices per-subscription atomicity for the
+                                # synthetic row but avoids FOREIGN KEY failures
+                                # caused by flush/ordering differences.
+                                self.session.commit()
                             except Exception:
+                                self.session.rollback()
                                 logger.exception(
-                                    "Failed to flush synthetic exchange rate"
+                                    "Failed to commit synthetic exchange rate",
                                 )
                                 raise
                     else:
@@ -151,7 +154,13 @@ class PaymentRegistrationBatchService:
                             # Missing exchange rate for this subscription/date: skip
                             # this subscription per-spec and surface an error for logging
                             raise Exception(f"Missing exchange rate for {p_date}: {e}")
+                        # Use the actual date of the found exchange rate for the
+                        # FK reference (the repository may return the most recent
+                        # rate on or before p_date). Using p_date here caused
+                        # FOREIGN KEY constraint failures when the rate date
+                        # differed from p_date.
                         rate = getattr(rate_obj, "rate", rate_obj)
+                        rate_date_used = getattr(rate_obj, "date", p_date)
 
                     histories_to_create.append(
                         PaymentHistory(
@@ -169,7 +178,11 @@ class PaymentRegistrationBatchService:
                             exchange_rate=rate,
                             rate_from_currency=subscription.currency,
                             rate_to_currency=subscription.user.base_currency,
-                            rate_date=p_date,
+                            rate_date=(
+                                rate_date_used
+                                if "rate_date_used" in locals()
+                                else p_date
+                            ),
                             payment_method=subscription.payment_method,
                         ),
                     )
@@ -183,7 +196,8 @@ class PaymentRegistrationBatchService:
                         payment_history_repo.bulk_save(histories_to_create)
                     else:
                         payment_history_repo.bulk_save(
-                            histories_to_create, commit=False
+                            histories_to_create,
+                            commit=False,
                         )
 
                     last_processed_date = histories_to_create[-1].payment_date
