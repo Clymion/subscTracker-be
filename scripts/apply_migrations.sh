@@ -1,6 +1,15 @@
 #!/bin/bash
 # Script to apply database migrations to the SQLite database
 
+# Default to running replication
+REPLICATE=true
+
+# Check for a flag to skip replication
+if [ "$1" == "--no-replicate" ]; then
+    REPLICATE=false
+    echo "Skipping continuous replication."
+fi
+
 # Set the path to the SQLite database file
 DB_FILE="instance/app.db"
 
@@ -26,6 +35,8 @@ fi
 
 # Apply migrations using Alembic (assuming alembic is configured)
 echo "Applying migrations to $DB_FILE..."
+# The initial `litestream replicate -exec` command is for a one-off execution,
+# so it's safe to run regardless of the flag.
 litestream replicate -exec "python -m alembic upgrade head"
 
 if [ $? -eq 0 ]; then
@@ -35,4 +46,10 @@ else
     exit 1
 fi
 
-litestream replicate
+# Start continuous replication only if the flag is not set
+if [ "$REPLICATE" = true ]; then
+    echo "Starting continuous replication..."
+    litestream replicate
+else
+    echo "Migrations applied without starting continuous replication."
+fi

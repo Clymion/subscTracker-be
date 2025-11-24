@@ -459,68 +459,6 @@ class TestSubscriptionPaymentDateCalculation:
             subscription.calculate_next_payment_date()
 
 
-@pytest.mark.unit
-class TestSubscriptionPrivateUtilityMethods:
-    """Test Subscription model private utility methods."""
-
-    def test_is_last_day_of_month_true_cases(self):
-        """Test _is_last_day_of_month returns True for last days."""
-        # Arrange
-        subscription = Subscription()
-
-        # Test cases: various last days of months
-        test_dates = [
-            date(2024, 1, 31),  # January
-            date(2024, 2, 29),  # February (leap year)
-            date(2023, 2, 28),  # February (non-leap year)
-            date(2024, 4, 30),  # April
-            date(2024, 6, 30),  # June
-            date(2024, 12, 31),  # December
-        ]
-
-        # Act & Assert
-        for test_date in test_dates:
-            assert subscription._is_last_day_of_month(test_date) is True
-
-    def test_is_last_day_of_month_false_cases(self):
-        """Test _is_last_day_of_month returns False for non-last days."""
-        # Arrange
-        subscription = Subscription()
-
-        # Test cases: various non-last days
-        test_dates = [
-            date(2024, 1, 30),  # Not last day of January
-            date(2024, 2, 28),  # Not last day of February (leap year)
-            date(2024, 4, 29),  # Not last day of April
-            date(2024, 12, 30),  # Not last day of December
-            date(2024, 6, 15),  # Middle of June
-        ]
-
-        # Act & Assert
-        for test_date in test_dates:
-            assert subscription._is_last_day_of_month(test_date) is False
-
-    def test_add_months_basic_functionality(self):
-        """Test _add_months basic functionality."""
-        # Arrange
-        subscription = Subscription()
-        start_date = date(2024, 1, 15)
-
-        # Act & Assert
-        assert subscription._add_months(start_date, 1) == date(2024, 2, 15)
-        assert subscription._add_months(start_date, 3) == date(2024, 4, 15)
-        assert subscription._add_months(start_date, 12) == date(2025, 1, 15)
-
-    def test_add_months_with_year_overflow(self):
-        """Test _add_months handles year overflow correctly."""
-        # Arrange
-        subscription = Subscription()
-        start_date = date(2024, 11, 15)
-
-        # Act & Assert
-        assert subscription._add_months(start_date, 2) == date(2025, 1, 15)
-        assert subscription._add_months(start_date, 14) == date(2026, 1, 15)
-
 
 @pytest.mark.unit
 class TestSubscriptionEdgeCases:

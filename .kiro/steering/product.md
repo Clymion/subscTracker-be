@@ -4,13 +4,14 @@ This project is the backend API for a web application designed to help individua
 
 ## Core Features
 
-- **User Authentication**: Secure user registration and login using JWT-based authentication.
-- **Subscription Management**: Full CRUD (Create, Read, Update, Delete) functionality for subscription services.
-- **Labeling System**: Users can create and assign custom labels to categorize their subscriptions (e.g., "Work," "Entertainment").
-- **Payment History**: Track and manage payment records for each subscription, including support for multiple currencies.
+- **User Authentication**: Secure user registration and login using JWT-based authentication, including access/refresh tokens and secure password hashing.
+- **Subscription Management**: Full CRUD (Create, Read, Update, Delete) functionality for subscription services, including labeling and status management (e.g., trial, paused).
+- **Payment History Management**: Supports registration and editing of payment records, multi-currency handling, and automatic exchange rate fetching.
 - **Exchange Rate Automation**: Automatically fetches and updates exchange rates daily to provide accurate cost conversions for foreign currency subscriptions.
-- **Reminder Notifications**: Sends reminders for upcoming payment deadlines to prevent missed payments.
-- **Spending Analysis**: Offers reporting and visualization features to help users understand their spending habits.
+- **Notification System**: Sends reminders for upcoming payment deadlines via email/push notifications to prevent missed payments.
+- **Spending Analysis**: Offers reporting and visualization features to help users understand their spending habits (monthly/annual summaries).
+- **Common Infrastructure**: Standardized API response format, pagination, comprehensive error handling, structured logging, and environment configuration management (pydantic-settings).
+- **Testing Infrastructure**: Comprehensive unit and integration tests (90%+ coverage), test data factories, and CI/CD readiness.
 
 ## Target Use Case
 

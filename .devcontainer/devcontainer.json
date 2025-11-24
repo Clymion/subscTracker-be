@@ -17,7 +17,7 @@
             "version": "lts"
         }
     },
-    "postCreateCommand": "npm install -g @google/gemini-cli@latest",
+    "postCreateCommand": "npm install -g @google/gemini-cli && npx --yes cc-sdd@latest --gemini --lang ja",
     "customizations": {
         "vscode": {
             "extensions": [

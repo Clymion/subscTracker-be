@@ -27,5 +27,6 @@ from app.models.exchange_rate import ExchangeRate
 from app.models.label import Label
 from app.models.subscription import Subscription
 from app.models.user import User
+from app.models.payment_history import PaymentHistory
 
 # 他のモデルも同様にインポートしていく
