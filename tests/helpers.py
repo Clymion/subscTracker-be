@@ -13,6 +13,7 @@ from flask import Response
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy.orm import Session
 
+from app.models.exchange_rate import ExchangeRate
 from app.models.label import Label
 from app.models.subscription import Subscription
 from app.models.user import User
@@ -157,7 +158,9 @@ def save_subscription(db_session: Session, subscription: Subscription) -> Subscr
 
 
 def make_and_save_subscription(
-    db_session: Session, user_id: Optional[int] = None, **kwargs,
+    db_session: Session,
+    user_id: Optional[int] = None,
+    **kwargs,
 ) -> Subscription:
     """
     Create and save a subscription in one step.
@@ -230,7 +233,9 @@ def save_label(db_session: Session, label: Label) -> Label:
 
 
 def make_and_save_label(
-    db_session: Session, user_id: Optional[int] = None, **kwargs,
+    db_session: Session,
+    user_id: Optional[int] = None,
+    **kwargs,
 ) -> Label:
     """
     Create and save a label in one step.
@@ -447,7 +452,8 @@ def assert_user_matches(user: User, expected_data: dict) -> None:
 
 
 def assert_subscription_matches(
-    subscription: Subscription, expected_data: dict,
+    subscription: Subscription,
+    expected_data: dict,
 ) -> None:
     """
     Assert that a subscription matches expected data.
@@ -567,3 +573,74 @@ def clean_database(db_session: Session) -> None:
     except Exception:
         db_session.rollback()
         raise
+
+
+def make_exchange_rate(
+    from_currency: str = "USD",
+    to_currency: str = "USD",
+    date: date = None,
+    rate: float = 1.0,
+    source: str = "test",
+    **kwargs,
+) -> ExchangeRate:
+    """
+    Create an ExchangeRate instance for testing.
+
+    Args:
+        from_currency: Source currency code.
+        to_currency: Target currency code.
+        date: Exchange rate date. Defaults to today.
+        rate: Exchange rate value.
+        source: Exchange rate source.
+        **kwargs: Additional exchange rate attributes.
+
+    Returns:
+        ExchangeRate: ExchangeRate instance ready for testing.
+    """
+    if date is None:
+        date = date.today()
+
+    exchange_rate_data = {
+        "from_currency": from_currency,
+        "to_currency": to_currency,
+        "date": date,
+        "rate": rate,
+        "source": source,
+        **kwargs,
+    }
+
+    return ExchangeRate(**exchange_rate_data)
+
+
+def save_exchange_rate(
+    db_session: Session, exchange_rate: ExchangeRate
+) -> ExchangeRate:
+    """
+    Save an exchange rate to the database.
+
+    Args:
+        db_session: Database session.
+        exchange_rate: ExchangeRate instance to save.
+
+    Returns:
+        ExchangeRate: Saved exchange rate.
+    """
+    db_session.add(exchange_rate)
+    db_session.commit()
+    db_session.refresh(exchange_rate)
+    return exchange_rate
+
+
+def make_and_save_exchange_rate(db_session: Session, **kwargs) -> ExchangeRate:
+    """
+    Create and save an exchange rate in one step.
+
+    Args:
+        db_session: Database session.
+        **kwargs: ExchangeRate attributes.
+
+    Returns:
+        ExchangeRate: Created and saved exchange rate.
+    """
+    exchange_rate = make_exchange_rate(**kwargs)
+    return save_exchange_rate(db_session, exchange_rate)

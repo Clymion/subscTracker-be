@@ -54,7 +54,7 @@ class Subscription(db.Model):
 
     # Payment schedule
     initial_payment_date: Mapped[date] = mapped_column(Date, nullable=False)
-    next_payment_date: Mapped[date] = mapped_column(Date, nullable=False)
+    next_payment_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
     payment_frequency: Mapped[str] = mapped_column(String(20), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
 
@@ -188,61 +188,20 @@ class Subscription(db.Model):
 
     def calculate_next_payment_date(self, from_date: Optional[date] = None) -> date:
         """
-        Calculate next payment date with smart month-end handling.
+        Calculate next payment date using the common date utility.
 
         Args:
             from_date: Date to calculate from. Defaults to current next_payment_date.
 
         Returns:
-            Next payment date with smart month-end handling.
+            The calculated next payment date.
         """
+        from app.common import date_utils
+
         if from_date is None:
             from_date = self.next_payment_date
 
-        if self.payment_frequency == PaymentFrequency.MONTHLY:
-            return self._add_months(from_date, 1)
-        if self.payment_frequency == PaymentFrequency.QUARTERLY:
-            return self._add_months(from_date, 3)
-        if self.payment_frequency == PaymentFrequency.YEARLY:
-            return self._add_months(from_date, 12)
-        msg = f"{ErrorMessages.UNKNOWN_PAYMENT_FREQUENCY}: {self.payment_frequency}"
-        raise ValueError(msg)
-
-    def _add_months(self, start_date: date, months: int) -> date:
-        """
-        Add months to a date with smart month-end handling.
-
-        Handles edge cases like:
-        - Jan 31 + 1 month = Feb 28/29 (depending on leap year)
-        - May 31 + 1 month = Jun 30
-        - End-of-month contracts stay end-of-month
-        """
-        import calendar
-
-        year = start_date.year
-        month = start_date.month + months
-        day = start_date.day
-
-        # Handle year overflow
-        while month > 12:
-            year += 1
-            month -= 12
-
-        # Smart month-end handling
-        # If original date was the last day of the month, make result last day too
-        if self._is_last_day_of_month(start_date):
-            last_day = calendar.monthrange(year, month)[1]
-            return date(year, month, last_day)
-
-        # Handle day overflow (e.g., Jan 31 -> Feb 28/29)
-        last_day = calendar.monthrange(year, month)[1]
-        day = min(day, last_day)
-
-        return date(year, month, day)
-
-    def _is_last_day_of_month(self, check_date: date) -> bool:
-        """Check if date is the last day of its month."""
-        import calendar
-
-        last_day = calendar.monthrange(check_date.year, check_date.month)[1]
-        return check_date.day == last_day
+        return date_utils.calculate_next_payment_date(
+            from_date,
+            self.payment_frequency,
+        )

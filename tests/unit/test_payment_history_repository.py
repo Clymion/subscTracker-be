@@ -238,3 +238,45 @@ class TestPaymentHistoryRepository:
         # Assert
         mock_session.delete.assert_called_once_with(payment_to_delete)
         mock_session.commit.assert_called_once()
+
+    def test_bulk_save(self, repository, mock_session):
+        # Arrange
+        new_histories = [
+            PaymentHistory(user_id=1, subscription_id=1, amount=10.0),
+            PaymentHistory(user_id=1, subscription_id=1, amount=10.0),
+        ]
+
+        # Act
+        repository.bulk_save(new_histories)
+
+        # Assert
+        mock_session.bulk_save_objects.assert_called_once_with(new_histories)
+        mock_session.commit.assert_called_once()
+
+    def test_find_latest_by_subscription_id(self, repository, mock_session):
+        # Arrange
+        subscription_id = 101
+        latest_history = PaymentHistory(
+            payment_id=4,
+            subscription_id=subscription_id,
+            payment_date=date(2023, 2, 1),
+        )
+        # The mock setup for the query chain
+        mock_query = mock_session.query.return_value
+        filtered_query = mock_query.filter_by.return_value
+        ordered_query = filtered_query.order_by.return_value
+        ordered_query.first.return_value = latest_history
+
+        # Act
+        result = repository.find_latest_by_subscription_id(subscription_id)
+
+        # Assert
+        assert result is not None
+        assert result.payment_id == 4
+        assert result.payment_date == date(2023, 2, 1)
+        # Verify the query was constructed correctly
+        mock_session.query.assert_called_with(PaymentHistory)
+        mock_query.filter_by.assert_called_once_with(subscription_id=subscription_id)
+        # Ensure it's ordering by payment_date descending
+        filtered_query.order_by.assert_called_once()
+        ordered_query.first.assert_called_once()

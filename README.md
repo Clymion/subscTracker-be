@@ -146,6 +146,10 @@ poetry run pytest
 ```bash
 ./scripts/apply_migrations.sh
 ```
+   **Note:** CI/CDパイプラインなどでマイグレーションのみを実行し、スクリプトを終了させたい場合は、`--no-replicate` フラグを使用してください。これにより、`litestream`による継続的なレプリケーションがスキップされます。
+   ```bash
+   ./scripts/apply_migrations.sh --no-replicate
+   ```
 
 5. **開発サーバーの起動**
 ```bash

@@ -97,7 +97,7 @@ def db_session(app: Flask) -> Generator[Session, None, None]:
         scoped_sess = scoped_session(lambda: session)
         _db.session = scoped_sess
 
-        yield session
+        yield scoped_sess
 
         # Cleanup: scoped session removal and transaction rollback
         scoped_sess.remove()
