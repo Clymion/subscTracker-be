@@ -7,9 +7,9 @@
 @host = http://localhost:5000
 # @host = https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app
 
-@email = payment-user@example.com
-@password = StrongPassword123!
-@username = payment-user
+@email = user.dev1@example.com
+@password = muy6KNK*tfm@nbv-yqb
+@username = user.dev1
 
 @accessToken =
 @refreshToken =
@@ -51,7 +51,7 @@ Content-Type: application/json
 # レスポンスからトークンを更新
 @accessToken = {{login.response.body.token}}
 @refreshToken = {{login.response.body.refresh_token}}
-@userId = {{login.response.body.data.user.user_id}}
+@userId = {{login.response.body.user.id}}
 
 
 ###

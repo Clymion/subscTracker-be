@@ -43,6 +43,14 @@ class SubscriptionRepository:
             .first()
         )
 
+    def find_by_id_and_user_id(self, subscription_id: int, user_id: int) -> Subscription | None:
+        """Find a subscription by its ID and ensuring it belongs to the given user."""
+        return (
+            self.session.query(Subscription)
+            .filter_by(subscription_id=subscription_id, user_id=user_id)
+            .first()
+        )
+
     def find_all_by_user_id(
         self,
         user_id: int,

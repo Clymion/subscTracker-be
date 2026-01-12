@@ -4,15 +4,45 @@ Payment History APIエンドポイント
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from marshmallow import Schema, fields, validate, ValidationError as MarshmallowValidationError
 
+from app.exceptions import BadRequestError, ResourceNotFoundError, ForbiddenError, ValidationError
 from app.models import db
 from app.models.payment_history import PaymentHistory
 from app.services.payment_history_service import PaymentHistoryService
+from app.repositories.payment_history_repository import PaymentHistoryRepository
+from app.repositories.user_repository import UserRepository
+from app.repositories.subscription_repository import SubscriptionRepository
+from app.services.exchange_rate_service import ExchangeRateService
+from app.repositories.exchange_rate_repository import ExchangeRateRepository
 
 payment_history_bp = Blueprint("payment_history_bp", __name__)
 
 
-payment_history_service = PaymentHistoryService(session=db.session)
+# Instantiate repositories
+payment_history_repository = PaymentHistoryRepository(session=db.session)
+user_repository = UserRepository(session=db.session)
+subscription_repository = SubscriptionRepository(session=db.session)
+exchange_rate_repository = ExchangeRateRepository(session=db.session)
+
+# Instantiate services
+exchange_rate_service = ExchangeRateService(exchange_rate_repository=exchange_rate_repository)
+
+# Instantiate service with injected repositories
+payment_history_service = PaymentHistoryService(
+    session=db.session,
+    payment_history_repository=payment_history_repository,
+    user_repository=user_repository,
+    subscription_repository=subscription_repository,
+    exchange_rate_service=exchange_rate_service,
+)
+
+class PaymentCreateRequestSchema(Schema):
+    subscription_id = fields.Int(required=True)
+    payment_date = fields.Date(required=True)
+    amount = fields.Float(required=True, validate=validate.Range(min=0.01))
+    currency = fields.Str(required=True, validate=validate.Length(equal=3))
+    payment_method = fields.Str(required=True)
 
 
 @payment_history_bp.route("/payments", methods=["GET"])
@@ -63,3 +93,31 @@ def get_payment_histories():
     except ValueError as e:
 
         return jsonify({"error": {"code": 400, "message": str(e)}}), 400
+
+
+@payment_history_bp.route("/payments", methods=["POST"])
+@jwt_required()
+def create_payment():
+    """新しい支払履歴を登録する"""
+    user_id = get_jwt_identity()
+    json_data = request.get_json()
+    if not json_data:
+        raise BadRequestError("Request body is empty")
+
+    try:
+        # Marshmallow validation
+        payment_data = PaymentCreateRequestSchema().load(json_data)
+        
+        # Service call
+        created_payment = payment_history_service.create_payment(user_id=user_id, payment_data=payment_data)
+
+        return jsonify({"data": created_payment.to_dict()}), 201
+
+    except ResourceNotFoundError as e:
+        return jsonify({"error": {"code": 404, "message": str(e)}}), 404
+    except ForbiddenError as e:
+        return jsonify({"error": {"code": 403, "message": str(e)}}), 403
+    except ValidationError as e: # Catches app.exceptions.ValidationError (e.g., from ExchangeRateService)
+        return jsonify({"error": {"code": 400, "message": str(e)}}), 400
+    except MarshmallowValidationError as e: # Catches marshmallow.ValidationError
+        return jsonify({"error": {"code": 400, "message": e.messages}}), 400

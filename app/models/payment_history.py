@@ -42,9 +42,9 @@ class PaymentHistory(db.Model):
     payment_date: Mapped[date] = mapped_column(Date, nullable=False)
     amount: Mapped[float] = mapped_column(REAL, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    rate_from_currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    rate_to_currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    rate_date: Mapped[date] = mapped_column(Date, nullable=False)
+    rate_from_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    rate_to_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    rate_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     exchange_rate: Mapped[float | None] = mapped_column(REAL, nullable=True)
     converted_amount: Mapped[float | None] = mapped_column(REAL, nullable=True)
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -74,7 +74,7 @@ class PaymentHistory(db.Model):
             "currency": self.currency,
             "rate_from_currency": self.rate_from_currency,
             "rate_to_currency": self.rate_to_currency,
-            "rate_date": self.rate_date.isoformat(),
+            "rate_date": self.rate_date.isoformat() if self.rate_date else None,
             "exchange_rate": self.exchange_rate,
             "converted_amount": self.converted_amount,
             "payment_method": self.payment_method,
