@@ -77,23 +77,28 @@ class PaymentHistoryService:
         exchange_rate = None
         converted_amount = amount
 
-        if payment_currency != user.base_currency:
-            try:
-                rate = self.exchange_rate_service.get_exchange_rate(
-                    payment_date_obj,
-                    from_currency=payment_currency,
-                    to_currency=user.base_currency,
-                )
-            except ResourceNotFoundError:
-                raise ValidationError(
-                    f"Exchange rate not found for {payment_currency} to {user.base_currency} on {payment_date_obj}"
-                )
-            
-            rate_from_currency = payment_currency
-            rate_to_currency = user.base_currency
-            rate_date = payment_date_obj
-            exchange_rate = rate.rate
-            converted_amount = amount / rate.rate
+        try:
+            rate_obj, was_inverted = self.exchange_rate_service.get_exchange_rate(
+                payment_date_obj,
+                from_currency=payment_currency,
+                to_currency=user.base_currency,
+            )
+        except ResourceNotFoundError:
+            raise ValidationError(
+                f"Exchange rate not found for {payment_currency} to {user.base_currency} on {payment_date_obj}"
+            )
+
+        # Use the attributes from the found rate object to satisfy the FK constraint
+        rate_from_currency = rate_obj.from_currency
+        rate_to_currency = rate_obj.to_currency
+        rate_date = rate_obj.date
+
+        if was_inverted:
+            exchange_rate = 1 / rate_obj.rate
+            converted_amount = amount * exchange_rate
+        else:
+            exchange_rate = rate_obj.rate
+            converted_amount = amount / exchange_rate
 
         payment = PaymentHistory(
             user_id=user_id,

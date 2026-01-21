@@ -17,6 +17,7 @@ from app.models.user import User
 from tests.helpers import (
     assert_error_response,
     assert_success_response,
+    make_and_save_exchange_rate,
     make_and_save_subscription,
     make_and_save_user,
     make_api_headers,
@@ -322,6 +323,7 @@ class TestCreatePaymentHistoryAPI:
         self,
         client: FlaskClient,
         user_with_subscription: dict,
+        clean_db: Session,
     ):
         """
         [正常系] POST /payments:
@@ -333,9 +335,21 @@ class TestCreatePaymentHistoryAPI:
         subscription: Subscription = user_with_subscription["subscription"]
         user: User = user_with_subscription["user"]
 
+        # Ensure Identity Rate exists for base currency
+        from datetime import date
+        payment_date = date(2025, 1, 1)
+
+        make_and_save_exchange_rate(
+            clean_db,
+            from_currency=user.base_currency,
+            to_currency=user.base_currency,
+            date=payment_date,
+            rate=1.0,
+        )
+
         payment_data = {
             "subscription_id": subscription.subscription_id,
-            "payment_date": "2025-01-01",
+            "payment_date": payment_date.isoformat(),
             "amount": 10.00,
             "currency": user.base_currency,  # User's base currency, e.g., USD
             "payment_method": "credit_card",

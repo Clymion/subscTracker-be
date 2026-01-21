@@ -117,6 +117,7 @@ class TestPaymentHistoryService:
         mock_user_repository,
         mock_subscription_repository,
         mock_payment_history_repository,
+        mock_exchange_rate_service,
     ):
         # Arrange
         user_id = 1
@@ -128,6 +129,14 @@ class TestPaymentHistoryService:
         mock_subscription.user_id = user_id
         mock_subscription.name = "Test Subscription"
         mock_subscription_repository.find_by_id.return_value = mock_subscription
+
+        # Mock Identity Rate
+        mock_rate = MagicMock()
+        mock_rate.rate = 1.0
+        mock_rate.from_currency = "USD"
+        mock_rate.to_currency = "USD"
+        mock_rate.date = date(2025, 1, 1)
+        mock_exchange_rate_service.get_exchange_rate.return_value = (mock_rate, False)
 
         payment_data = {
             "subscription_id": 101,
@@ -147,7 +156,7 @@ class TestPaymentHistoryService:
         assert saved_payment.user_id == user_id
         assert saved_payment.amount == 20.00
         assert saved_payment.currency == "USD"
-        assert saved_payment.exchange_rate is None
+        assert saved_payment.exchange_rate == 1.0
         assert saved_payment.converted_amount == 20.00
 
     def test_create_payment_foreign_currency_success(
@@ -171,7 +180,10 @@ class TestPaymentHistoryService:
         
         mock_rate = MagicMock()
         mock_rate.rate = 150.0
-        mock_exchange_rate_service.get_exchange_rate.return_value = mock_rate
+        mock_rate.from_currency = "JPY"
+        mock_rate.to_currency = "USD"
+        mock_rate.date = date(2025, 1, 1)
+        mock_exchange_rate_service.get_exchange_rate.return_value = (mock_rate, False)
 
         payment_data = {
             "subscription_id": 101,

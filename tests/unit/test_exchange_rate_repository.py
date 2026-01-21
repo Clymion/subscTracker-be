@@ -151,6 +151,9 @@ def test_find_rates_by_base_currency(clean_db: Session):
     Test finding the latest rates for all currency pairs based on a single base currency.
     """
     # Arrange
+    # Ensure database is clean
+    clean_db.query(ExchangeRate).delete()
+    
     repo = ExchangeRateRepository(clean_db)
     rates = [
         # USD -> JPY (latest on the 26th)
