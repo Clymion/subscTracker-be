@@ -1,6 +1,6 @@
 # 実装タスク: 支払履歴更新API (TDDスタイル)
 
-- [ ] 1. 支払履歴サービスのユニットテスト作成 (Red)
+- [x] 1. 支払履歴サービスのユニットテスト作成 (Red)
   - `tests/unit/test_payment_history_service.py` に `update_payment` メソッドのテストケースを追加する。
   - テストケース: 所有権チェック（他人のデータを更新しようとしてエラーになること）。
   - テストケース: 部分更新（金額のみ変更され、他の値が維持されること）。
@@ -8,7 +8,7 @@
   - テストケース: サブスクリプション変更（`subscription_name` が更新されること）。
   - _Requirements: 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 2. 支払履歴サービスの実装とリファクタリング (Green & Refactor)
+- [x] 2. 支払履歴サービスの実装とリファクタリング (Green & Refactor)
   - `app/services/payment_history_service.py` に `update_payment` メソッドを実装してテストをパスさせる。
     - ユーザーIDによる所有権検証ロジックを実装する。
     - `subscription_id` 変更時の名前更新ロジックを実装する。
@@ -18,7 +18,7 @@
   - 再度テストを実行し、リファクタリングで機能が壊れていないことを確認する。
   - _Requirements: 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 3. 支払履歴APIの結合テスト作成 (Red)
+- [x] 3. 支払履歴APIの結合テスト作成 (Red)
   - `tests/integration/test_payment_history_api.py` に `PATCH /payments/<id>` エンドポイントのテストを追加する。
   - テストケース: 正常系（200 OK、レスポンス内容の検証）。
   - テストケース: バリデーションエラー（不正な型、負の金額 -> 400 Bad Request）。
@@ -26,7 +26,7 @@
   - テストケース: 認証エラー（401 Unauthorized）。
   - _Requirements: 1.1, 1.2, 1.3, 1.6_
 
-- [ ] 4. 支払履歴APIの実装とリファクタリング (Green & Refactor)
+- [x] 4. 支払履歴APIの実装とリファクタリング (Green & Refactor)
   - `app/api/v1/payment_history.py` に `PaymentUpdateRequestSchema` を定義し、`PATCH` ルートを実装してテストをパスさせる。
     - `app/api/v1/payment_history.py` に `PaymentUpdateRequestSchema` を定義する（Marshmallow、全フィールド任意）。
     - `PATCH /payments/<int:payment_id>` ルートを実装し、Serviceメソッドを呼び出す。

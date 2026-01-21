@@ -274,3 +274,247 @@ class TestPaymentHistoryService:
         # Act & Assert
         with pytest.raises(ValidationError, match="Exchange rate not found"):
             service.create_payment(user_id, payment_data)
+
+    def test_update_payment_not_found(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 999
+        mock_payment_history_repository.find_by_id.return_value = None
+
+        # Act & Assert
+        with pytest.raises(ResourceNotFoundError, match="Payment history not found"):
+            service.update_payment(user_id, payment_id, {})
+
+    def test_update_payment_forbidden(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = MagicMock()
+        existing_payment.user_id = 2  # Belongs to another user
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+
+        # Act & Assert
+        with pytest.raises(ForbiddenError, match="This payment history does not belong to the current user"):
+            service.update_payment(user_id, payment_id, {})
+
+    def test_update_payment_partial_update_amount_only(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            amount=10.0,
+            currency="USD",
+            exchange_rate=1.0,
+            converted_amount=10.0,
+            payment_date=date(2025, 1, 1),
+            subscription_id=101,
+            subscription_name="Netflix"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+        mock_payment_history_repository.save.side_effect = lambda p: p
+
+        updates = {"amount": 20.0}
+
+        # Act
+        result = service.update_payment(user_id, payment_id, updates)
+
+        # Assert
+        assert result.amount == 20.0
+        assert result.converted_amount == 20.0 # Since rate is 1.0, converted should update simply
+        mock_payment_history_repository.save.assert_called_once()
+
+    def test_update_payment_recalculates_rate_on_currency_change(
+        self,
+        service,
+        mock_payment_history_repository,
+        mock_user_repository,
+        mock_exchange_rate_service
+    ):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        mock_user = MagicMock()
+        mock_user.base_currency = "USD"
+        mock_user_repository.find_by_id.return_value = mock_user
+
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            amount=10.0,
+            currency="USD",
+            exchange_rate=1.0,
+            converted_amount=10.0,
+            payment_date=date(2025, 1, 1),
+            subscription_id=101,
+            subscription_name="Netflix"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+        mock_payment_history_repository.save.side_effect = lambda p: p
+
+        # New rate for JPY -> USD
+        mock_rate = MagicMock()
+        mock_rate.rate = 150.0
+        mock_rate.from_currency = "JPY"
+        mock_rate.to_currency = "USD"
+        mock_rate.date = date(2025, 1, 1)
+        mock_exchange_rate_service.get_exchange_rate.return_value = (mock_rate, False)
+
+        updates = {"currency": "JPY", "amount": 3000.0}
+
+        # Act
+        result = service.update_payment(user_id, payment_id, updates)
+
+        # Assert
+        assert result.currency == "JPY"
+        assert result.amount == 3000.0
+        assert result.exchange_rate == 150.0
+        assert result.converted_amount == 20.0 # 3000 / 150
+        assert result.rate_from_currency == "JPY"
+        assert result.rate_to_currency == "USD"
+
+    def test_update_payment_updates_subscription_name(
+        self,
+        service,
+        mock_payment_history_repository,
+        mock_subscription_repository
+    ):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            subscription_id=101,
+            subscription_name="Netflix",
+            amount=10.0,
+            currency="USD",
+            payment_date=date(2025, 1, 1)
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+        mock_payment_history_repository.save.side_effect = lambda p: p
+
+        # New subscription
+        new_subscription = MagicMock()
+        new_subscription.id = 202
+        new_subscription.name = "Spotify"
+        new_subscription.user_id = user_id
+        mock_subscription_repository.find_by_id.return_value = new_subscription
+
+        updates = {"subscription_id": 202}
+
+        # Act
+        result = service.update_payment(user_id, payment_id, updates)
+
+        # Assert
+        assert result.subscription_id == 202
+        assert result.subscription_name == "Spotify"
+
+    def test_update_payment_subscription_not_found_or_forbidden(
+        self,
+        service,
+        mock_payment_history_repository,
+        mock_subscription_repository
+    ):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            subscription_id=101,
+            subscription_name="Netflix"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+
+        # Subscription not found
+        mock_subscription_repository.find_by_id.return_value = None
+
+        updates = {"subscription_id": 999}
+
+        # Act & Assert
+        with pytest.raises(ResourceNotFoundError, match="Subscription not found"):
+            service.update_payment(user_id, payment_id, updates)
+
+    def test_update_payment_amount_only_with_inverse_rate(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        # Case: JPY -> USD (Base). Rate USD->JPY=150.
+        # Stored: rate=1/150 (0.00666). Inverted.
+        # rate_from=USD (Base), rate_to=JPY (Payment).
+        # Wait, get_exchange_rate(from=JPY, to=USD).
+        # Returns (USD->JPY=150, Inverted=True).
+        # rate_obj.from=USD, rate_obj.to=JPY.
+        # stored rate_from=USD. stored rate_to=JPY.
+        # payment.currency = JPY.
+        # rate_from (USD) != currency (JPY).
+        # Logic: Inverted case -> Multiply.
+        
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            amount=3000.0,
+            currency="JPY",
+            exchange_rate=0.006666666666666667, # 1/150
+            converted_amount=20.0,
+            rate_from_currency="USD",
+            rate_to_currency="JPY",
+            payment_date=date(2025, 1, 1),
+            subscription_id=101,
+            subscription_name="Netflix"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+        mock_payment_history_repository.save.side_effect = lambda p: p
+
+        updates = {"amount": 1500.0} # Should become 10.0 USD
+
+        # Act
+        result = service.update_payment(user_id, payment_id, updates)
+
+        # Assert
+        assert result.amount == 1500.0
+        assert result.converted_amount == pytest.approx(10.0)
+        
+    def test_update_payment_amount_only_with_direct_rate(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        # Case: USD -> JPY (Base). Rate USD->JPY=150.
+        # get_exchange_rate(USD, JPY). Direct.
+        # Rate=150.
+        # rate_from=USD, rate_to=JPY.
+        # payment.currency=USD.
+        # rate_from (USD) == currency (USD).
+        # Logic: Direct case -> Divide.
+        # 10 USD -> 1500 JPY. (wait, create_payment divides: 10/150 = 0.066?)
+        # As discussed, create_payment logic seems to divide for Direct.
+        # If I want to match create_payment, I divide.
+        
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            amount=150.0,
+            currency="USD",
+            exchange_rate=150.0,
+            converted_amount=1.0, # 150 / 150 = 1.0 (If logic is divide)
+            rate_from_currency="USD",
+            rate_to_currency="JPY",
+            payment_date=date(2025, 1, 1),
+            subscription_id=101,
+            subscription_name="Netflix"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+        mock_payment_history_repository.save.side_effect = lambda p: p
+
+        updates = {"amount": 300.0} # Should become 2.0
+
+        # Act
+        result = service.update_payment(user_id, payment_id, updates)
+
+        # Assert
+        assert result.amount == 300.0
+        assert result.converted_amount == pytest.approx(2.0)
+
+

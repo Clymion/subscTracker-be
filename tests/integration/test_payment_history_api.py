@@ -548,6 +548,164 @@ class TestCreatePaymentHistoryAPI:
         assert_error_response(response, 400)
 
 
+@pytest.fixture
+def user_with_payment(
+    clean_db: Session,
+    authenticated_user: dict,
+) -> dict:
+    """支払履歴を1つ持つ認証済みユーザーを準備する"""
+    user: User = authenticated_user["user"]
+    subscription = make_and_save_subscription(clean_db, user_id=user.user_id, name="Netflix")
+    
+    payment_date = date(2025, 1, 1)
+    payment = PaymentHistory(
+        user_id=user.user_id,
+        subscription_id=subscription.subscription_id,
+        subscription_name=subscription.name,
+        payment_date=payment_date,
+        amount=10.0,
+        currency="USD",
+        rate_from_currency="USD",
+        rate_to_currency="USD",
+        rate_date=payment_date,
+        exchange_rate=1.0,
+        converted_amount=10.0,
+        payment_method="credit_card",
+    )
+    clean_db.add(payment)
+    clean_db.commit()
+    
+    authenticated_user["payment"] = payment
+    return authenticated_user
+
+
+@pytest.mark.api
+class TestUpdatePaymentHistoryAPI:
+    """PATCH /api/v1/payments/{payment_id}"""
+
+    def test_update_payment_success(
+        self, client: FlaskClient, user_with_payment: dict
+    ):
+        """[正常系] 支払履歴の一部を更新できる"""
+        headers = user_with_payment["headers"]
+        payment: PaymentHistory = user_with_payment["payment"]
+        
+        update_data = {
+            "amount": 15.50,
+            "payment_method": "paypal"
+        }
+        
+        response = client.patch(
+            f"/api/v1/payments/{payment.payment_id}",
+            json=update_data,
+            headers=headers
+        )
+        
+        data = assert_success_response(response, 200)
+        assert data["data"]["amount"] == 15.50
+        assert data["data"]["payment_method"] == "paypal"
+        assert data["data"]["currency"] == "USD"  # 変更していないフィールドが維持されていること
+
+    def test_update_payment_invalid_amount_returns_400(
+        self, client: FlaskClient, user_with_payment: dict
+    ):
+        """[異常系] 不正な金額（負の値）は400エラーを返す"""
+        headers = user_with_payment["headers"]
+        payment: PaymentHistory = user_with_payment["payment"]
+        
+        update_data = {"amount": -5.0}
+        
+        response = client.patch(
+            f"/api/v1/payments/{payment.payment_id}",
+            json=update_data,
+            headers=headers
+        )
+        
+        assert_error_response(response, 400)
+
+    def test_update_payment_not_found_returns_404(
+        self, client: FlaskClient, authenticated_user: dict
+    ):
+        """[異常系] 存在しない支払履歴IDの更新は404エラーを返す"""
+        headers = authenticated_user["headers"]
+        
+        response = client.patch(
+            "/api/v1/payments/9999",
+            json={"amount": 10.0},
+            headers=headers
+        )
+        
+        assert_error_response(response, 404)
+
+    def test_update_payment_unauthorized_without_token(
+        self, client: FlaskClient, user_with_payment: dict
+    ):
+        """[異常系] 認証トークンがない場合は401エラーを返す"""
+        payment: PaymentHistory = user_with_payment["payment"]
+        
+        response = client.patch(
+            f"/api/v1/payments/{payment.payment_id}",
+            json={"amount": 10.0}
+        )
+        
+        assert_error_response(response, 401)
+
+    def test_update_payment_forbidden_for_other_user_record(
+        self, client: FlaskClient, user_with_payment: dict, clean_db: Session
+    ):
+        """[異常系] 他のユーザーの支払履歴を更新しようとすると404エラーを返す（存在隠蔽）"""
+        # 別ユーザーを作成
+        other_user = make_and_save_user(clean_db, username="other", email="other@test.com")
+        other_headers = make_api_headers(user_id=other_user.user_id)
+        
+        payment: PaymentHistory = user_with_payment["payment"]
+        
+        response = client.patch(
+            f"/api/v1/payments/{payment.payment_id}",
+            json={"amount": 10.0},
+            headers=other_headers
+        )
+        
+        # セキュリティのため404を返す設計（設計ドキュメント参照）
+        assert_error_response(response, 404)
+
+    def test_update_payment_recalculates_exchange_rate(
+        self, client: FlaskClient, user_with_payment: dict, clean_db: Session
+    ):
+        """[正常系] 通貨変更時に為替レートが再計算される"""
+        headers = user_with_payment["headers"]
+        payment: PaymentHistory = user_with_payment["payment"]
+        user: User = user_with_payment["user"]
+        
+        # JPY -> USD のレートを準備
+        rate_date = date(2025, 1, 1)
+        make_and_save_exchange_rate(
+            clean_db,
+            from_currency="JPY",
+            to_currency="USD",
+            date=rate_date,
+            rate=150.0
+        )
+        
+        update_data = {
+            "currency": "JPY",
+            "amount": 3000
+        }
+        
+        response = client.patch(
+            f"/api/v1/payments/{payment.payment_id}",
+            json=update_data,
+            headers=headers
+        )
+        
+        data = assert_success_response(response, 200)
+        assert data["data"]["currency"] == "JPY"
+        assert data["data"]["amount"] == 3000
+        assert data["data"]["exchange_rate"] == 150.0
+        assert data["data"]["converted_amount"] == 20.0  # 3000 / 150
+
+
+
         
 
         
