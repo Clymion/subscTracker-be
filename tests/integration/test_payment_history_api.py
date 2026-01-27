@@ -556,8 +556,18 @@ def user_with_payment(
     """支払履歴を1つ持つ認証済みユーザーを準備する"""
     user: User = authenticated_user["user"]
     subscription = make_and_save_subscription(clean_db, user_id=user.user_id, name="Netflix")
-    
+
     payment_date = date(2025, 1, 1)
+    
+    # Ensure exchange rate exists for FK constraint
+    make_and_save_exchange_rate(
+        clean_db,
+        from_currency="USD",
+        to_currency="USD",
+        date=payment_date,
+        rate=1.0,
+    )
+
     payment = PaymentHistory(
         user_id=user.user_id,
         subscription_id=subscription.subscription_id,
@@ -577,7 +587,6 @@ def user_with_payment(
     
     authenticated_user["payment"] = payment
     return authenticated_user
-
 
 @pytest.mark.api
 class TestUpdatePaymentHistoryAPI:
@@ -703,6 +712,69 @@ class TestUpdatePaymentHistoryAPI:
         assert data["data"]["amount"] == 3000
         assert data["data"]["exchange_rate"] == 150.0
         assert data["data"]["converted_amount"] == 20.0  # 3000 / 150
+
+
+@pytest.mark.api
+class TestDeletePaymentHistoryAPI:
+    """DELETE /api/v1/payments/{payment_id}"""
+
+    def test_delete_payment_success(
+        self, client: FlaskClient, user_with_payment: dict, clean_db: Session
+    ):
+        """[正常系] 支払履歴を削除できる"""
+        headers = user_with_payment["headers"]
+        payment: PaymentHistory = user_with_payment["payment"]
+        payment_id = payment.payment_id
+
+        response = client.delete(f"/api/v1/payments/{payment_id}", headers=headers)
+
+        assert response.status_code == 204
+        assert response.data == b""
+
+        # DBから消えていることを確認
+        clean_db.expire_all()
+        from app.models.payment_history import PaymentHistory
+        deleted_payment = clean_db.query(PaymentHistory).filter_by(payment_id=payment_id).first()
+        assert deleted_payment is None
+
+    def test_delete_payment_not_found(
+        self, client: FlaskClient, authenticated_user: dict
+    ):
+        """[異常系] 存在しないIDの削除は404エラーを返す"""
+        headers = authenticated_user["headers"]
+
+        response = client.delete("/api/v1/payments/9999", headers=headers)
+
+        assert_error_response(response, 404)
+
+    def test_delete_payment_forbidden_returns_404(
+        self, client: FlaskClient, user_with_payment: dict, clean_db: Session
+    ):
+        """[異常系] 他人の支払履歴を削除しようとすると404エラーを返す（存在隠蔽）"""
+        # 他のユーザーを作成
+        other_user = make_and_save_user(
+            clean_db, username="other_user_del", email="other_del@example.com"
+        )
+        other_headers = make_api_headers(user_id=other_user.user_id)
+        
+        payment: PaymentHistory = user_with_payment["payment"]
+
+        response = client.delete(
+            f"/api/v1/payments/{payment.payment_id}", headers=other_headers
+        )
+
+        # Requirement 1.4: Hide existence
+        assert_error_response(response, 404)
+
+    def test_delete_payment_unauthorized(
+        self, client: FlaskClient, user_with_payment: dict
+    ):
+        """[異常系] 認証なしでの削除は401エラーを返す"""
+        payment: PaymentHistory = user_with_payment["payment"]
+
+        response = client.delete(f"/api/v1/payments/{payment.payment_id}")
+
+        assert_error_response(response, 401)
 
 
 

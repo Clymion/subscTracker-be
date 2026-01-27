@@ -518,3 +518,57 @@ class TestPaymentHistoryService:
         assert result.converted_amount == pytest.approx(2.0)
 
 
+class TestPaymentHistoryServiceDelete:
+    def test_delete_payment_success(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = PaymentHistory(
+            user_id=user_id,
+            payment_id=payment_id,
+            amount=10.0,
+            currency="USD"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+
+        # Act
+        service.delete_payment(user_id, payment_id)
+
+        # Assert
+        mock_payment_history_repository.delete.assert_called_once_with(existing_payment)
+
+    def test_delete_payment_not_found(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 999
+        mock_payment_history_repository.find_by_id.return_value = None
+
+        # Act & Assert
+        with pytest.raises(ResourceNotFoundError, match="Payment history not found"):
+            service.delete_payment(user_id, payment_id)
+        mock_payment_history_repository.delete.assert_not_called()
+
+    def test_delete_payment_forbidden(self, service, mock_payment_history_repository):
+        # Arrange
+        user_id = 1
+        payment_id = 1
+        existing_payment = PaymentHistory(
+            user_id=2,  # Other user
+            payment_id=payment_id,
+            amount=10.0,
+            currency="USD"
+        )
+        mock_payment_history_repository.find_by_id.return_value = existing_payment
+
+        # Act & Assert
+        # Requirement 1.4: Security concealment (treated as 404 in Service/API)
+        # Note: design.md says "raise ResourceNotFoundError (or ForbiddenError handled as 404 by API)"
+        # Let's check requirements.md AC 4: "404 Not Found エラーを返す"
+        # We'll raise ForbiddenError here if we want to distinguish in Service, 
+        # or ResourceNotFoundError to be direct.
+        # Given existing update_payment uses ForbiddenError, let's follow that but be aware API maps it to 404.
+        with pytest.raises(ForbiddenError, match="This payment history does not belong to the current user"):
+            service.delete_payment(user_id, payment_id)
+        mock_payment_history_repository.delete.assert_not_called()
+
+

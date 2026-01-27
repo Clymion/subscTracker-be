@@ -5,12 +5,15 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.common.logging_setup import get_logger
 from app.exceptions import ForbiddenError, ResourceNotFoundError, ValidationError
 from app.models.payment_history import PaymentHistory
 from app.repositories.payment_history_repository import PaymentHistoryRepository
 from app.repositories.subscription_repository import SubscriptionRepository
 from app.repositories.user_repository import UserRepository
 from app.services.exchange_rate_service import ExchangeRateService
+
+logger = get_logger(__name__)
 
 
 class PaymentHistoryService:
@@ -207,3 +210,28 @@ class PaymentHistoryService:
         payment.payment_date = new_date
 
         return self.payment_history_repository.save(payment)
+
+    def delete_payment(self, user_id: int, payment_id: int) -> None:
+        """支払履歴を削除する."""
+        logger.info(
+            "Starting deletion of payment_history_id=%s for user_id=%s",
+            payment_id,
+            user_id,
+        )
+        try:
+            payment = self.payment_history_repository.find_by_id(payment_id)
+            if not payment:
+                msg = "Payment history not found"
+                raise ResourceNotFoundError(msg)
+
+            if payment.user_id != int(user_id):
+                msg = "This payment history does not belong to the current user"
+                raise ForbiddenError(msg)
+
+            self.payment_history_repository.delete(payment)
+            logger.info("Successfully deleted payment_history_id=%s", payment_id)
+        except Exception as e:
+            logger.exception(
+                "Failed to delete payment_history_id=%s: %s", payment_id, str(e),
+            )
+            raise
