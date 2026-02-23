@@ -39,7 +39,8 @@
                 "hbenl.vscode-test-explorer",
                 "google.gemini-cli-vscode-ide-companion",
                 "bierner.markdown-mermaid",
-                "tamasfe.even-better-toml"
+                "tamasfe.even-better-toml",
+                "ms-vscode.makefile-tools"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
