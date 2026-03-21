@@ -1,10 +1,8 @@
-description = "Validate implementation against requirements, design, and tasks"
-prompt = """
-<meta>
+---
 description: Validate implementation against requirements, design, and tasks
-argument-hint: [feature-name:$1] [task-numbers:$2]
-arguments: {{args}}
-</meta>
+allowed-tools: Bash, Glob, Grep, Read, LS
+argument-hint: [feature-name] [task-numbers]
+---
 
 # Implementation Validation
 
@@ -138,6 +136,3 @@ Provide output in the language specified in spec.json with:
 - Re-validate with `/kiro:validate-impl [feature] [tasks]`
 
 **Note**: Validation is recommended after implementation to ensure spec alignment and quality.
-
-arguments: {{args}}
-"""

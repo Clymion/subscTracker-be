@@ -8,6 +8,7 @@ This document outlines the technology stack, architecture, and development envir
 - **Database**: It primarily uses SQLite for both development and production, simplifying setup and maintenance. For testing, an in-memory SQLite database is utilized.
 - **Replication & Backup**: Litestream is used for real-time replication and backup of the SQLite database to a cloud storage provider, ensuring data durability.
 - **Containerization**: The entire application is containerized using Docker, with separate stages for building and production to create a lightweight final image.
+- **Error Handling**: Rust-inspired `Result` type pattern (`app/common/result.py`) for functional error handling in batch processing services.
 
 ## Backend
 
@@ -17,7 +18,7 @@ This document outlines the technology stack, architecture, and development envir
 - **Authentication**: JWTs (JSON Web Tokens) are implemented for securing API endpoints via the `flask-jwt-extended` library (^4.7.1).
 - **Configuration**: Application settings are managed using `pydantic-settings` (^2.9.1), which loads configuration from environment variables and `.env` files.
 - **API Specification**: OpenAPI (Swagger) specifications are maintained in `docs/openapi/` and served via the application.
-- **Other Key Libraries**: `pydantic` (^2.11.4), `python-dotenv` (^1.1.0), `marshmallow` (^4.0.0), `flask-sqlalchemy` (^3.1.1), `gunicorn` (^23.0.0), `flask-swagger-ui` (^5.21.0), `prance` (^25.4.8.0), `openapi-spec-validator` (^0.7.2), `psutil` (^7.0.0), `flask-cors` (^6.0.1), `google-cloud-secret-manager` (^2.24.0).
+- **Other Key Libraries**: `pydantic` (^2.11.4), `python-dotenv` (^1.1.0), `marshmallow` (^4.0.0), `flask-sqlalchemy` (^3.1.1), `gunicorn` (^23.0.0), `flask-swagger-ui` (^5.21.0), `prance` (^25.4.8.0), `openapi-spec-validator` (^0.7.2), `psutil` (^7.0.0), `flask-cors` (^6.0.1), `google-cloud-secret-manager` (^2.24.0), `python-dateutil` (^2.9.0.post0).
 
 ## Development Environment
 

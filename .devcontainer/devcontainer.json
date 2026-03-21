@@ -11,13 +11,21 @@
         "SHELL": "/bin/bash"
     },
     "remoteUser": "root",
-    // Gemini CLIをインストール
+    // Claude Codeをインストール
     "features": {
         "ghcr.io/devcontainers/features/node:1": {
             "version": "lts"
         }
     },
-    "postCreateCommand": "npm install -g @google/gemini-cli && npx --yes cc-sdd@latest --gemini --lang ja",
+    "remoteEnv": {
+        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+        "ANTHROPIC_AUTH_TOKEN": "${localEnv:OPENROUTER_API_KEY}",
+        "ANTHROPIC_API_KEY": "",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "z-ai/glm-5-turbo",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "z-ai/glm-5",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "moonshotai/kimi-k2.5"
+    },
+    "postCreateCommand": "npm install -g @anthropic-ai/claude-code && npx --yes cc-sdd@latest --lang ja",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -33,11 +41,9 @@
                 "Gruntfuggly.todo-tree",
                 "charliermarsh.ruff",
                 "ms-vscode.test-adapter-converter",
-                "saoudrizwan.claude-dev",
                 "humao.rest-client",
                 "GitHub.vscode-pull-request-github",
                 "hbenl.vscode-test-explorer",
-                "google.gemini-cli-vscode-ide-companion",
                 "bierner.markdown-mermaid",
                 "tamasfe.even-better-toml",
                 "ms-vscode.makefile-tools"

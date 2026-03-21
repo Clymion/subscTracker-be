@@ -1,10 +1,8 @@
-description = "Show specification status and progress"
-prompt = """
-<meta>
+---
 description: Show specification status and progress
-argument-hint: <feature-name:$1>
-arguments: {{args}}
-</meta>
+allowed-tools: Bash, Read, Glob, Write, Edit, MultiEdit, Update
+argument-hint: <feature-name>
+---
 
 # Specification Status
 
@@ -85,6 +83,3 @@ Provide status report in the language specified in spec.json:
 To see all available specs:
 - Run with no argument or use wildcard
 - Shows all specs in `.kiro/specs/` with their status
-
-arguments: {{args}}
-"""

@@ -1,8 +1,7 @@
-description = "Manage .kiro/steering/ as persistent project knowledge"
-prompt = """
-<meta>
+---
 description: Manage .kiro/steering/ as persistent project knowledge
-</meta>
+allowed-tools: Bash, Read, Write, Edit, MultiEdit, Glob, Grep, LS
+---
 
 # Kiro Steering Management
 
@@ -142,6 +141,3 @@ Review and approve as Source of Truth.
 - Avoid documenting agent-specific tooling directories (e.g. `.cursor/`, `.gemini/`, `.claude/`)
 - `.kiro/settings/` content should NOT be documented in steering files (settings are metadata, not project knowledge)
 - Light references to `.kiro/specs/` and `.kiro/steering/` are acceptable; avoid other `.kiro/` directories
-
-arguments: {{args}}
-"""

@@ -1,10 +1,8 @@
-description = "Generate implementation tasks for a specification"
-prompt = """
-<meta>
+---
 description: Generate implementation tasks for a specification
-argument-hint: <feature-name:$1> [-y:$2] [--sequential:$3]
-arguments: {{args}}
-</meta>
+allowed-tools: Read, Write, Edit, MultiEdit, Glob, Grep
+argument-hint: <feature-name> [-y] [--sequential]
+---
 
 # Implementation Tasks Generator
 
@@ -33,23 +31,24 @@ Generate implementation tasks for feature **$1** based on approved requirements 
 **Validate approvals**:
 - If `-y` flag provided ($2 == "-y"): Auto-approve requirements and design in spec.json
 - Otherwise: Verify both approved (stop if not, see Safety & Fallback)
-- Determine sequential mode: `sequential = ($3 == "--sequential")`
+- Determine sequential mode based on presence of `--sequential`
 
 ### Step 2: Generate Implementation Tasks
 
 **Load generation rules and template**:
 - Read `.kiro/settings/rules/tasks-generation.md` for principles
-- If `sequential == false`: Read `.kiro/settings/rules/tasks-parallel-analysis.md` for parallel judgement criteria
+- If `sequential` is **false**: Read `.kiro/settings/rules/tasks-parallel-analysis.md` for parallel judgement criteria
 - Read `.kiro/settings/templates/specs/tasks.md` for format (supports `(P)` markers)
 
 **Generate task list following all rules**:
 - Use language specified in spec.json
-- Map all requirements to tasks and list numeric requirement IDs only (comma-separated) without extra narration, descriptive suffixes, parentheses, translations, or free-form labels
+- Map all requirements to tasks
+- When documenting requirement coverage, list numeric requirement IDs only (comma-separated) without descriptive suffixes, parentheses, translations, or free-form labels
 - Ensure all design components included
 - Verify task progression is logical and incremental
-- Collapse single-subtask structures by promoting them to major tasks and keep container summaries concise
-- Apply `(P)` markers to tasks that satisfy parallel criteria (skip markers when `sequential == true`)
-- Mark optional acceptance-criteria-focused test coverage subtasks with `- [ ]*` only when deferrable post-MVP
+- Collapse single-subtask structures by promoting them to major tasks and avoid duplicating details on container-only major tasks (use template patterns accordingly)
+- Apply `(P)` markers to tasks that satisfy parallel criteria (omit markers in sequential mode)
+- Mark optional test coverage subtasks with `- [ ]*` only when they strictly cover acceptance criteria already satisfied by core implementation and can be deferred post-MVP
 - If existing tasks.md found, merge with new content
 
 ### Step 3: Finalize
@@ -135,6 +134,3 @@ Provide brief summary in the language specified in spec.json:
 - Existing tasks used as reference (merge mode)
 
 **Note**: The implementation phase will guide you through executing tasks with appropriate context and validation.
-
-arguments: {{args}}
-"""
