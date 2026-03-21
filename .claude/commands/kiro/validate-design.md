@@ -1,10 +1,8 @@
-description = "Interactive technical design quality review and validation"
-prompt = """
-<meta>
+---
 description: Interactive technical design quality review and validation
-argument-hint: <feature-name:$1>
-arguments: {{args}}
-</meta>
+allowed-tools: Read, Glob, Grep
+argument-hint: <feature-name>
+---
 
 # Technical Design Validation
 
@@ -92,6 +90,3 @@ Provide output in the language specified in spec.json with:
 - Re-validate with `/kiro:validate-design $1`
 
 **Note**: Design validation is recommended but optional. Quality review helps catch issues early.
-
-arguments: {{args}}
-"""

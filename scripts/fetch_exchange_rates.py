@@ -170,12 +170,15 @@ def fetch_exchange_rates(
 
             # 'insert_rates_to_db'が期待する形式にレスポンスを整形
             all_rates = data.get("conversion_rates", {})
-            # 自分自身へのレートは不要なので除外
+            # 自分自身へのレートも含める (Identity Rate)
             filtered_rates = {
                 currency: all_rates[currency]
                 for currency in TARGET_CURRENCIES
-                if currency in all_rates and currency != base_currency
+                if currency in all_rates
             }
+            # APIがbase_currencyを返さない場合は手動で追加
+            if base_currency in TARGET_CURRENCIES and base_currency not in filtered_rates:
+                filtered_rates[base_currency] = 1.0
 
             rates_data_list.append(
                 {

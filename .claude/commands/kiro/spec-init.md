@@ -1,10 +1,8 @@
-description = "Initialize a new specification with detailed project description"
-prompt = """
-<meta>
+---
 description: Initialize a new specification with detailed project description
-argument-hint: <project-description:$ARGUMENTS>
-arguments: {{args}}
-</meta>
+allowed-tools: Bash, Read, Write, Glob
+argument-hint: <project-description>
+---
 
 # Spec Initialization
 
@@ -65,6 +63,3 @@ Provide output in the language specified in `spec.json` with the following struc
 - **Template Missing**: If template files don't exist in `.kiro/settings/templates/specs/`, report error with specific missing file path and suggest checking repository setup
 - **Directory Conflict**: If feature name already exists, append numeric suffix (e.g., `feature-name-2`) and notify user of automatic conflict resolution
 - **Write Failure**: Report error with specific path and suggest checking permissions or disk space
-
-arguments: {{args}}
-"""

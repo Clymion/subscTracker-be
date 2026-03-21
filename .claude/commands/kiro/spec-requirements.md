@@ -1,10 +1,8 @@
-description = "Generate comprehensive requirements for a specification"
-prompt = """
-<meta>
+---
 description: Generate comprehensive requirements for a specification
-argument-hint: <feature-name:$1>
-arguments: {{args}}
-</meta>
+allowed-tools: Bash, Glob, Grep, LS, Read, Write, Edit, MultiEdit, Update, WebSearch, WebFetch
+argument-hint: <feature-name>
+---
 
 # Requirements Generation
 
@@ -96,6 +94,3 @@ Provide output in the language specified in spec.json with:
 - Provide feedback and re-run `/kiro:spec-requirements $1`
 
 **Note**: Approval is mandatory before proceeding to design phase.
-
-arguments: {{args}}
-"""

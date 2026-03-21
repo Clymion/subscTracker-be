@@ -24,31 +24,37 @@ This document describes the directory structure, code organization patterns, and
 
 - **`api/v1/`**: Defines the API endpoints (routes). Each file corresponds to a resource (e.g., `auth.py`, `subscription.py`, `exchange_rate.py`, `label.py`, `payment_history.py`, `system.py`, `swagger.py`).
 - **`models/`**: Contains SQLAlchemy ORM models, defining the database schema (e.g., `user.py`, `subscription.py`, `label.py`, `exchange_rate.py`, `payment_history.py`, `association_tables.py`).
-- **`services/`**: Implements the business logic. Services are called by the API layer and interact with repositories (e.g., `auth_service.py`, `subscription_service.py`, `exchange_rate_service.py`, `label_service.py`, `payment_history_service.py`).
-- **`repositories/`**: Handles direct database operations (CRUD). It abstracts the data access logic from the services (e.g., `exchange_rate_repository.py`, `label_repository.py`, `payment_history_repository.py`, `subscription_repository.py`).
-- **`common/`**: Includes shared utilities like authentication middleware (`auth_middleware.py`), error handlers (`error_handlers.py`), logging setup (`logging_setup.py`), and response utilities (`response_utils.py`).
+- **`services/`**: Implements the business logic. Services are called by the API layer and interact with repositories:
+  - Core services: `auth_service.py`, `subscription_service.py`, `exchange_rate_service.py`, `label_service.py`, `payment_history_service.py`
+  - Batch processing: `payment_registration_batch_service.py` - Background payment history generation
+- **`repositories/`**: Handles direct database operations (CRUD). It abstracts the data access logic from the services (e.g., `exchange_rate_repository.py`, `label_repository.py`, `payment_history_repository.py`, `subscription_repository.py`, `user_repository.py`).
+- **`common/`**: Includes shared utilities:
+  - Authentication middleware (`auth_middleware.py`)
+  - Error handlers (`error_handlers.py`)
+  - Logging setup (`logging_setup.py`)
+  - Response utilities (`response_utils.py`)
+  - `result.py` - Rust-inspired Result type for functional error handling
+  - `date_utils.py` - Payment date calculation utilities with month-end handling
 - **`config.py`**: Manages application configuration using Pydantic.
 - **`constants.py`**: Stores application-wide constants.
 - **`exceptions.py`**: Defines custom application exceptions.
 
 ### `tests/` Directory
 
-- **`unit/`**: Unit tests for individual components (e.g., `test_auth_service.py`, `test_exchange_rate_service.py`, `test_payment_history_service.py`, `test_subscription_service.py`, `test_config.py`, `test_api_response_common.py`, `test_auth_middleware.py`, `test_label_model.py`, `test_user_model.py`).
-- **`integration/`**: Integration tests that verify the interaction between different components (e.g., `test_auth_api.py`, `test_exchange_rate_api.py`, `test_label_api.py`, `test_payment_history_api.py`, `test_subscription_api.py`, `test_migration.py`).
+- **`unit/`**: Unit tests for individual components. Includes `conftest.py` for unit-specific fixtures.
+- **`integration/`**: Integration tests that verify the interaction between different components.
 - **`fixtures/`**: Pytest fixtures for setting up test data and environments (e.g., `config.py`).
 - **`conftest.py`**: Global test configurations and fixtures for Pytest.
 - **`helpers.py`**: Helper functions for tests.
 
 ### `docs/` Directory
 
-- **`openapi/`**: Contains OpenAPI specification files (`openapi.yaml`), with subdirectories for `components/` and `paths/`, and a `build/` directory for bundled specs.
+- **`openapi/`**: OpenAPI specification files with `components/` and `paths/` subdirectories.
 - **`db/`**: Database design documentation (`ER-diagram.md`, `table-definition.md`).
-- **`test-list/`**: TDD test lists for various features (e.g., `authentication.md`, `exchange-rate.md`, `label.md`, `subscription-api.md`).
-- **`MVP-proposal.md`**: MVP proposal document.
-- **`feature-list.md`**: List of features.
-- **`system-proposal.md`**: System proposal document.
-- **`action-flowchart.md`**: Action flowchart.
-- **`screen-flow-diagram.md`**: Screen flow diagram.
+- **`test-list/`**: TDD test lists for features. Includes `integration/` subdirectory for integration test specifications.
+- **Setup/Guides**: `setup.md`, `api-guide.md`, `development-workflow.md`
+- **Batch processing**: `payment-registration-batch.md`, `exchange_rates_import.md`
+- **Planning**: `MVP-proposal.md`, `feature-list.md`, `system-proposal.md`
 
 ### `scripts/` Directory
 

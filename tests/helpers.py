@@ -563,11 +563,15 @@ def clean_database(db_session: Session) -> None:
 
         # Then remove dependent entities
         from app.models.label import Label
+        from app.models.payment_history import PaymentHistory
         from app.models.subscription import Subscription
 
+        db_session.query(PaymentHistory).delete()
         db_session.query(Subscription).delete()
         db_session.query(Label).delete()
         db_session.query(User).delete()
+        from app.models.exchange_rate import ExchangeRate
+        db_session.query(ExchangeRate).delete()
 
         db_session.commit()
     except Exception:

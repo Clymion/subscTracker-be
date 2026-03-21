@@ -55,3 +55,11 @@ class LabelHierarchyError(LabelError):
 class ResourceNotFoundError(Exception):
     """指定されたリソースが見つからない場合に発生する汎用例外。"""
 
+
+class BadRequestError(Exception):
+    """リクエストが不正である場合に発生する汎用例外。"""
+
+
+class ForbiddenError(Exception):
+    """アクセスが禁止されているリソースにアクセスしようとした場合に発生する汎用例外。"""
+

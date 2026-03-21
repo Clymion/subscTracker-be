@@ -1,10 +1,8 @@
-description = "Execute spec tasks using TDD methodology"
-prompt = """
-<meta>
+---
 description: Execute spec tasks using TDD methodology
-argument-hint: <feature-name:$1> [task-numbers:$2]
-arguments: {{args}}
-</meta>
+allowed-tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, LS, WebFetch, WebSearch
+argument-hint: <feature-name> [task-numbers]
+---
 
 # Implementation Task Executor
 
@@ -108,6 +106,3 @@ Provide brief summary in the language specified in spec.json:
 
 **Execute all pending**:
 - `/kiro:spec-impl $1` - All unchecked tasks
-
-arguments: {{args}}
-"""

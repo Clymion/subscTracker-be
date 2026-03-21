@@ -49,7 +49,7 @@ class TestExchangeRateServiceGet:
         mock_exchange_rate_repo.find_rate_by_date.return_value = expected_rate
 
         # Act
-        result = exchange_rate_service.get_exchange_rate(
+        result, is_inverted = exchange_rate_service.get_exchange_rate(
             target_date=target_date,
             from_currency=from_currency,
             to_currency=to_currency,
@@ -58,6 +58,7 @@ class TestExchangeRateServiceGet:
         # Assert
         assert result is not None
         assert result.rate == 145.5
+        assert is_inverted is False
         mock_exchange_rate_repo.find_rate_by_date.assert_called_once_with(
             target_date=target_date,
             from_currency=from_currency,
@@ -83,10 +84,17 @@ class TestExchangeRateServiceGet:
                 from_currency=from_currency,
                 to_currency=to_currency,
             )
-        mock_exchange_rate_repo.find_rate_by_date.assert_called_once_with(
+        
+        assert mock_exchange_rate_repo.find_rate_by_date.call_count == 2
+        mock_exchange_rate_repo.find_rate_by_date.assert_any_call(
             target_date=target_date,
             from_currency=from_currency,
             to_currency=to_currency,
+        )
+        mock_exchange_rate_repo.find_rate_by_date.assert_any_call(
+            target_date=target_date,
+            from_currency=to_currency,
+            to_currency=from_currency,
         )
 
 @pytest.mark.unit

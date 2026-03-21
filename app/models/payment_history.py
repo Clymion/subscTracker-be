@@ -74,7 +74,7 @@ class PaymentHistory(db.Model):
             "currency": self.currency,
             "rate_from_currency": self.rate_from_currency,
             "rate_to_currency": self.rate_to_currency,
-            "rate_date": self.rate_date.isoformat(),
+            "rate_date": self.rate_date.isoformat() if self.rate_date else None,
             "exchange_rate": self.exchange_rate,
             "converted_amount": self.converted_amount,
             "payment_method": self.payment_method,

@@ -25,9 +25,10 @@ class ExchangeRateService:
         target_date: date,
         from_currency: str,
         to_currency: str,
-    ) -> ExchangeRate:
+    ) -> tuple[ExchangeRate, bool]:
         """
         Get the exchange rate for a specific date and currency pair.
+        If a direct rate is not found, it attempts to find the inverse rate.
 
         Args:
             target_date: The target date for the exchange rate.
@@ -35,19 +36,32 @@ class ExchangeRateService:
             to_currency: The currency to convert to.
 
         Returns:
-            The ExchangeRate object.
+            A tuple containing the actual ExchangeRate object from the database
+            and a boolean indicating if the rate was inverted.
 
         Raises:
-            ResourceNotFoundError: If no exchange rate is found.
+            ResourceNotFoundError: If no exchange rate is found for either direction.
         """
-        rate = self.exchange_rate_repository.find_rate_by_date(
+        # Try to find the direct rate
+        direct_rate = self.exchange_rate_repository.find_rate_by_date(
             target_date=target_date,
             from_currency=from_currency,
             to_currency=to_currency,
         )
-        if rate is None:
-            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
-        return rate
+        if direct_rate:
+            return direct_rate, False
+
+        # If direct rate is not found, try to find the inverse rate
+        inverse_rate = self.exchange_rate_repository.find_rate_by_date(
+            target_date=target_date,
+            from_currency=to_currency,
+            to_currency=from_currency,
+        )
+        if inverse_rate:
+            return inverse_rate, True
+
+        # If neither is found, raise an error
+        raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
 
     def get_rates_for_base_currency(
         self,
