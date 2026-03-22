@@ -50,6 +50,7 @@ class AuthService:
         email = data.get("email", "").strip()
         password = data.get("password", "")
         confirm_password = data.get("confirm_password", "")
+        base_currency = data.get("base_currency", "USD")
 
         # Validate username
         self._validate_username(username)
@@ -72,6 +73,7 @@ class AuthService:
         user = User(
             username=username,
             email=email,
+            base_currency=base_currency,
         )
         user.set_password(password)
 

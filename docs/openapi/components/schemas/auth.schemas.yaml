@@ -52,10 +52,15 @@ UserBasic:
       type: string
       format: email
       description: メールアドレス
+    base_currency:
+      type: string
+      description: 基準通貨
+      enum: [JPY, USD, EUR, GBP]
   required:
     - id
     - username
     - email
+    - base_currency
 User:
   allOf:
     - $ref: '#/UserBasic'
@@ -77,3 +82,7 @@ UserUpdateRequest:
       type: string
       format: email
       description: メールアドレス
+    base_currency:
+      type: string
+      description: 基準通貨
+      enum: [JPY, USD, EUR, GBP]
