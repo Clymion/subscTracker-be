@@ -37,40 +37,40 @@
 
 ### Phase 2: Docker Environment
 
-- [ ] 2. Docker環境でのTiDB設定 (P)
-- [ ] 2.1 (P) compose.ymlのTiDBサービス構成確認
+- [x] 2. Docker環境でのTiDB設定 (P)
+- [x] 2.1 (P) compose.ymlのTiDBサービス構成確認
   - TiDBコンテナが正常に起動することを確認
   - ヘルスチェックが正しく設定されていることを確認
   - データ永続ボリュームが適切に設定されていることを確認
   - _Requirements: 6.1, 6.2, 6.4_
 
-- [ ] 2.2 (P) backend-apiサービスの依存関係設定
+- [x] 2.2 (P) backend-apiサービスの依存関係設定
   - backend-apiがTiDBのヘルスチェック完了後に起動することを確認
   - `depends_on`の`condition: service_healthy`が正しく動作することを確認
   - _Requirements: 6.3_
 
 ### Phase 3: Migration & Compatibility
 
-- [ ] 3. SQLite互換性とマイグレーション設定
-- [ ] 3.1 SQLite PRAGMA条件分岐の動作確認
+- [x] 3. SQLite互換性とマイグレーション設定
+- [x] 3.1 SQLite PRAGMA条件分岐の動作確認
   - 既存の`set_sqlite_pragma`イベントリスナーが正しく動作することを確認
   - SQLite接続時のみPRAGMAが実行されることを確認
   - TiDB/MySQL接続時はPRAGMAがスキップされることを確認
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 3.2 Alembic環境設定のTiDB対応
+- [x] 3.2 Alembic環境設定のTiDB対応
   - `migrations/env.py`が環境変数からTiDB接続URLを読み込むことを確認
   - SQLAlchemyがTiDB互換のDDLを生成することを確認
   - `DATABASE_URL`環境変数の処理を確認
   - _Requirements: 4.1, 4.2_
 
-- [ ] 3.3 マイグレーション実行とロールバック検証
+- [x] 3.3 マイグレーション実行とロールバック検証
   - TiDB環境でAlembicマイグレーションが正常に実行されることを確認
   - マイグレーションのロールバックが正常に動作することを確認
   - 既存データを保持したままスキーマ更新ができることを確認
   - _Requirements: 4.3, 4.4_
 
-- [ ] 3.4 データ型とスキーマ互換性の確認
+- [x] 3.4 データ型とスキーマ互換性の確認
   - SQLAlchemyモデルがTiDB互換のデータ型を使用していることを確認
   - 複合主キー（ExchangeRate等）が正常に動作することを確認
   - 外部キー制約（`ON DELETE CASCADE`, `ON DELETE SET NULL`）が動作することを確認
