@@ -21,7 +21,7 @@
 ```env
 # TiDB接続設定
 DB_DRIVER=mysql
-DB_HOST=localhost
+DB_HOST=tidb
 DB_PORT=4000
 DB_USER=root
 DB_PASSWORD=
@@ -68,7 +68,7 @@ poetry run alembic current
 # SQLiteからTiDBへのデータ移行
 poetry run python scripts/migrate_data.py \
     --source instance/app.db \
-    --dest "mysql+pymysql://root@localhost:4000/subsc_tracker"
+    --dest "mysql+pymysql://root@tidb:4000/subsc_tracker"
 ```
 
 #### 3.2 データ整合性の確認
@@ -116,7 +116,7 @@ TiDB接続時の接続プール設定：
 ### 接続エラー
 
 ```
-Error: Can't connect to MySQL server on 'localhost:4000'
+Error: Can't connect to MySQL server on 'tidb:4000'
 ```
 
 **対処法:**
