@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -G --data-urlencode \"msg=タスクが完了しました\" http://host.docker.internal:18080/ > /dev/null"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -G --data-urlencode \"msg=指示・承認待ちです\" http://host.docker.internal:18080/ > /dev/null"
+          }
+        ]
+      }
+    ]
+  }
+}

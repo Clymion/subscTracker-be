@@ -7,18 +7,7 @@ RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 # 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
     git apt-transport-https ca-certificates gnupg curl \
-    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Litestreamをインストール
-RUN curl -sfL "https://github.com/benbjohnson/litestream/releases/download/v0.3.12/litestream-v0.3.12-linux-amd64.deb" -o litestream.deb \
-&& dpkg -i litestream.deb \
-&& rm litestream.deb
-# Litestreamの設定ファイルをコピー
-RUN mkdir -p /etc/litestream
-COPY docker/litestream.yml /etc/litestream.yml
 
 # Poetry のインストールと設定
 ENV POETRY_HOME="/opt/poetry" \
@@ -43,14 +32,6 @@ RUN poetry install --no-root
 # クリーンな環境に、ビルドした成果物だけをコピー
 FROM python:3.13-slim AS production
 
-# Litestreamのインストールに必要なパッケージを追加
-RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Litestreamをインストール
-RUN curl -sfL "https://github.com/benbjohnson/litestream/releases/download/v0.3.12/litestream-v0.3.12-linux-amd64.deb" -o litestream.deb \
-&& dpkg -i litestream.deb \
-&& rm litestream.deb
-
 WORKDIR /workspace
 
 # ビルダー・ステージから、インストール済みのライブラリだけをコピー
@@ -60,11 +41,8 @@ COPY --from=builder /workspace/poetry.lock /workspace/poetry.lock
 
 # アプリケーションコードをコピー
 COPY . .
-# Litestreamの設定ファイルをコピー
-RUN mkdir -p /etc/litestream
-COPY docker/litestream.yml /etc/litestream.yml
 
-# データベースのディレクトリを作成
+# データベースのディレクトリを作成（SQLite使用時のため）
 RUN mkdir -p /workspace/instance
 
 # entrypointスクリプトをコピーして実行権限を付与

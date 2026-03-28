@@ -1,9 +1,0 @@
-# etc/litestream.yml
-dbs:
-  - path: /workspace/instance/app.db
-    replicas:
-      - name: gcs
-        type: gcs
-        bucket: subsc-tracker-sqlite-backup
-        # GCSバケット内のバックアップ先パス
-        path: db

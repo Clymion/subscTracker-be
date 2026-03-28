@@ -17,6 +17,29 @@ services:
       - ./credentials/subscTracker_adc.json:/tmp/gcloud/adc.json:ro
       - poetry-cache:/tmp/poetry_cache
     command: poetry run flask --app 'app:create_app()' run --host=0.0.0.0 --debug
+    depends_on:
+      tidb:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  tidb:
+    image: pingcap/tidb:latest
+    ports:
+      - "4000:4000"
+      - "10080:10080"
+    volumes:
+      - tidb-data:/tmp/tidb
+    command:
+      - --store=unistore
+      - --path=/tmp/tidb
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:10080/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   poetry-cache:
+  tidb-data:

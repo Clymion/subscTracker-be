@@ -26,6 +26,7 @@ psutil = "^7.0.0"
 flask-cors = "^6.0.1"
 google-cloud-secret-manager = "^2.24.0"
 python-dateutil = "^2.9.0.post0"
+pymysql = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"

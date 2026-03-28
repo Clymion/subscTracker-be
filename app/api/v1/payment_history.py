@@ -164,6 +164,12 @@ def update_payment(payment_id: int) -> Response:
 
     except ResourceNotFoundError as e:
         return jsonify({"error": {"code": 404, "message": str(e)}}), 404
+    except ForbiddenError:
+        # Hide existence for security reasons (Requirement 1.5)
+        return (
+            jsonify({"error": {"code": 404, "message": "Payment history not found"}}),
+            404,
+        )
     except MarshmallowValidationError as e:
         return jsonify({"error": {"code": 400, "message": e.messages}}), 400
 
