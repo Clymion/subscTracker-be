@@ -555,6 +555,10 @@ def clean_database(db_session: Session) -> None:
         db_session: Database session to use for cleanup.
     """
     try:
+        # First, ensure we're in a clean transaction state
+        # If a previous operation failed, we need to rollback
+        db_session.rollback()
+
         # Delete in reverse order of dependencies
         # First remove many-to-many relationships
         from app.models.association_tables import subscription_labels
