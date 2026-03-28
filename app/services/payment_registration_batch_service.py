@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 from app.common import date_utils
 from app.common.result import Result
-from app.exceptions import ResourceNotFoundError
+from app.exceptions import ExchangeRateNotFoundError, ResourceNotFoundError
 from app.models import db
 from app.models.exchange_rate import ExchangeRate
 from app.models.payment_history import PaymentHistory
@@ -150,10 +150,14 @@ class PaymentRegistrationBatchService:
                                 subscription.currency,
                                 subscription.user.base_currency,
                             )
-                        except ResourceNotFoundError as e:
+                        except ExchangeRateNotFoundError as e:
                             # Missing exchange rate for this subscription/date: skip
                             # this subscription per-spec and surface an error for logging
-                            raise Exception(f"Missing exchange rate for {p_date}: {e}")
+                            logger.error(
+                                f"Exchange rate not found for subscription {subscription.subscription_id}: "
+                                f"{e.from_currency}/{e.to_currency} on {e.target_date}"
+                            )
+                            raise
                         # Use the actual date of the found exchange rate for the
                         # FK reference (the repository may return the most recent
                         # rate on or before p_date). Using p_date here caused

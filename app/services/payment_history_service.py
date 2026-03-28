@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.common.logging_setup import get_logger
-from app.exceptions import ForbiddenError, ResourceNotFoundError, ValidationError
+from app.exceptions import ExchangeRateNotFoundError, ForbiddenError, ResourceNotFoundError, ValidationError
 from app.models.payment_history import PaymentHistory
 from app.repositories.payment_history_repository import PaymentHistoryRepository
 from app.repositories.subscription_repository import SubscriptionRepository
@@ -74,7 +74,7 @@ class PaymentHistoryService:
                 from_currency=currency,
                 to_currency=base_currency,
             )
-        except ResourceNotFoundError as err:
+        except ExchangeRateNotFoundError as err:
             msg = f"Exchange rate not found for {currency} to {base_currency} on {payment_date}"
             raise ValidationError(msg) from err
 

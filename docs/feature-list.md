@@ -54,3 +54,19 @@
 - ラベルの新規作成
 - ラベルの編集（名称、色）
 - ラベルの削除
+
+## 為替レート機能
+
+### 基準通貨（base_currency）の定義
+
+`base_currency`は、ユーザーの基準通貨（メインで使用する通貨）を指します。
+
+**使用例：**
+- ユーザーの`base_currency`がJPYの場合
+- $20のサブスクを契約する際、USDからJPYへの換算が必要
+- このとき、`from_currency="USD", to_currency="JPY"`の為替レートを取得する
+- つまり、`to_currency == base_currency`となるレートを検索する
+
+**メソッドの動作：**
+- `find_rates_by_base_currency(base_currency="JPY")`
+- 戻り値：`to_currency="JPY"`のレート一覧（USD→JPY, EUR→JPY等）

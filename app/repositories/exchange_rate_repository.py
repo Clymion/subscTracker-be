@@ -31,34 +31,56 @@ class ExchangeRateRepository:
         target_date: date,
         base_currency: str,
     ) -> list[ExchangeRate]:
-        """Find the most recent rates for each currency pair based on a single base currency."""
+        """
+        Find the most recent rates for each currency pair based on a single base currency.
+
+        Args:
+            target_date: The target date to find rates for.
+            base_currency: The base currency (to_currency) to find rates for.
+                For example, if base_currency is "JPY", this method returns rates
+                where to_currency="JPY" (e.g., USD→JPY, EUR→JPY).
+                This is useful for converting foreign subscription prices to the user's base currency.
+
+        Returns:
+            List of ExchangeRate objects with to_currency == base_currency.
+        """
         # Subquery to find the latest date for each currency pair
         latest_dates_subquery = (
             self.session.query(
-                ExchangeRate.to_currency,
+                ExchangeRate.from_currency,
                 func.max(ExchangeRate.date).label("max_date"),
             )
             .filter(
-                ExchangeRate.from_currency == base_currency,
+                ExchangeRate.to_currency == base_currency,
                 ExchangeRate.date <= target_date,
             )
-            .group_by(ExchangeRate.to_currency)
+            .group_by(ExchangeRate.from_currency)
             .subquery("latest_rates")
         )
 
         # Join the original table with the subquery to get the full records
-        return (
+        query =  (
             self.session.query(ExchangeRate)
             .join(
                 latest_dates_subquery,
                 and_(
-                    ExchangeRate.from_currency == base_currency,
-                    ExchangeRate.to_currency == latest_dates_subquery.c.to_currency,
+                    ExchangeRate.to_currency == base_currency,
+                    ExchangeRate.from_currency == latest_dates_subquery.c.from_currency,
                     ExchangeRate.date == latest_dates_subquery.c.max_date,
                 ),
             )
-            .all()
+            
         )
+
+        # デバッグ: 実際に実行されるSQLを出力
+        from sqlalchemy.dialects import mysql
+        from app.common.logging_setup import get_logger
+        logger = get_logger(__name__)
+        logger.debug("=== DEBUG SQL ===")
+        logger.debug(query.statement.compile(dialect=mysql.dialect(), compile_kwargs={"literal_binds": True}))
+        logger.debug(query.all())
+        logger.debug("=================")
+        return query.all()
 
     def find_rate_by_date(
         self,

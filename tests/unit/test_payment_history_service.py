@@ -5,7 +5,7 @@ from datetime import date
 from app.services.payment_history_service import PaymentHistoryService
 from app.repositories.payment_history_repository import PaymentHistoryRepository
 from app.models.payment_history import PaymentHistory
-from app.exceptions import ResourceNotFoundError, ForbiddenError, ValidationError
+from app.exceptions import ResourceNotFoundError, ForbiddenError, ValidationError, ExchangeRateNotFoundError
 from app.repositories.user_repository import UserRepository
 from app.repositories.subscription_repository import SubscriptionRepository
 from app.services.exchange_rate_service import ExchangeRateService
@@ -262,7 +262,9 @@ class TestPaymentHistoryService:
         mock_subscription_repository.find_by_id.return_value = mock_subscription
 
         # Simulate that the exchange rate service can't find a rate
-        mock_exchange_rate_service.get_exchange_rate.side_effect = ResourceNotFoundError
+        mock_exchange_rate_service.get_exchange_rate.side_effect = ExchangeRateNotFoundError(
+            date(2025, 1, 1), "JPY", "USD"
+        )
 
         payment_data = {
             "subscription_id": 101,

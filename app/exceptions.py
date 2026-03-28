@@ -52,6 +52,20 @@ class LabelHierarchyError(LabelError):
 
 
 
+
+
+class ExchangeRateNotFoundError(Exception):
+    """為替レートが見つからない場合に発生する例外。"""
+
+    def __init__(self, target_date, from_currency, to_currency):
+        self.target_date = target_date
+        self.from_currency = from_currency
+        self.to_currency = to_currency
+        super().__init__(
+            f"Exchange rate not found for {from_currency}/{to_currency} on {target_date}"
+        )
+
+
 class ResourceNotFoundError(Exception):
     """指定されたリソースが見つからない場合に発生する汎用例外。"""
 

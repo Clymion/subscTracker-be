@@ -3,7 +3,7 @@
 from datetime import date
 
 from app.constants import ErrorMessages
-from app.exceptions import ResourceNotFoundError
+from app.exceptions import ExchangeRateNotFoundError, ResourceNotFoundError
 from app.models.exchange_rate import ExchangeRate
 from app.repositories.exchange_rate_repository import ExchangeRateRepository
 
@@ -28,6 +28,7 @@ class ExchangeRateService:
     ) -> tuple[ExchangeRate, bool]:
         """
         Get the exchange rate for a specific date and currency pair.
+
         If a direct rate is not found, it attempts to find the inverse rate.
 
         Args:
@@ -40,7 +41,7 @@ class ExchangeRateService:
             and a boolean indicating if the rate was inverted.
 
         Raises:
-            ResourceNotFoundError: If no exchange rate is found for either direction.
+            ExchangeRateNotFoundError: If no exchange rate is found for either direction.
         """
         # Try to find the direct rate
         direct_rate = self.exchange_rate_repository.find_rate_by_date(
@@ -61,7 +62,7 @@ class ExchangeRateService:
             return inverse_rate, True
 
         # If neither is found, raise an error
-        raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
+        raise ExchangeRateNotFoundError(target_date, from_currency, to_currency)
 
     def get_rates_for_base_currency(
         self,
@@ -85,7 +86,7 @@ class ExchangeRateService:
             base_currency=base_currency,
         )
 
-        rate_dict = {rate.to_currency: rate.rate for rate in rates}
+        rate_dict = {rate.from_currency: rate.rate for rate in rates}
 
         if target_currencies:
             rate_dict = {
@@ -97,7 +98,10 @@ class ExchangeRateService:
         # If no rates are found and the base currency itself is not a target,
         # then we should raise a not found error.
         if not rate_dict and (not target_currencies or base_currency not in target_currencies):
-            raise ResourceNotFoundError(ErrorMessages.EXCHANGE_RATE_NOT_FOUND)
+            # Create a pseudo to_currency for the error message since we don't
+            # have a specific one (multiple target currencies were requested)
+            to_currency = ",".join(target_currencies) if target_currencies else "any"
+            raise ExchangeRateNotFoundError(target_date, base_currency, to_currency)
 
         # Add the base currency with a rate of 1.0 if it was requested, or if no
         # specific currencies were requested.

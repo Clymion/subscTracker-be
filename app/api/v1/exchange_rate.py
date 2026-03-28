@@ -11,7 +11,7 @@ from flask_jwt_extended import jwt_required
 
 from app.common.response_utils import success_response
 from app.constants import ValidationConstants
-from app.exceptions import ResourceNotFoundError
+from app.exceptions import ExchangeRateNotFoundError, ResourceNotFoundError
 from app.models import db
 from app.repositories.exchange_rate_repository import ExchangeRateRepository
 from app.services.exchange_rate_service import ExchangeRateService
@@ -77,7 +77,7 @@ def get_exchange_rates() -> tuple[dict, int]:
         }
         return success_response(response_data)
 
-    except ResourceNotFoundError:
+    except (ResourceNotFoundError, ExchangeRateNotFoundError):
         current_app.logger.warning(
             "Exchange rates not found for base %s on %s", base_currency, target_date,
         )

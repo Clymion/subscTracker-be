@@ -156,50 +156,50 @@ def test_find_rates_by_base_currency(clean_db: Session):
     
     repo = ExchangeRateRepository(clean_db)
     rates = [
-        # USD -> JPY (latest on the 26th)
+        # JPY -> USD (latest on the 26th)
         ExchangeRate(
-            from_currency="USD",
-            to_currency="JPY",
+            from_currency="JPY",
+            to_currency="USD",
             date=date(2025, 9, 26),
-            rate=145.0,
+            rate=0.0069,
             source="test",
         ),
         ExchangeRate(
-            from_currency="USD",
-            to_currency="JPY",
+            from_currency="JPY",
+            to_currency="USD",
             date=date(2025, 9, 25),
-            rate=144.0,
+            rate=0.00694,
             source="test",
         ),
-        # USD -> EUR (latest on the 27th)
-        ExchangeRate(
-            from_currency="USD",
-            to_currency="EUR",
-            date=date(2025, 9, 27),
-            rate=0.95,
-            source="test",
-        ),
-        ExchangeRate(
-            from_currency="USD",
-            to_currency="EUR",
-            date=date(2025, 9, 26),
-            rate=0.94,
-            source="test",
-        ),
-        # EUR -> JPY (should be ignored)
+        # EUR -> USD (latest on the 27th)
         ExchangeRate(
             from_currency="EUR",
-            to_currency="JPY",
+            to_currency="USD",
             date=date(2025, 9, 27),
-            rate=160.0,
+            rate=1.05,
             source="test",
         ),
-        # USD -> JPY but after target date (should be ignored)
         ExchangeRate(
-            from_currency="USD",
-            to_currency="JPY",
+            from_currency="EUR",
+            to_currency="USD",
+            date=date(2025, 9, 26),
+            rate=1.04,
+            source="test",
+        ),
+        # JPY -> EUR (should be ignored)
+        ExchangeRate(
+            from_currency="JPY",
+            to_currency="EUR",
+            date=date(2025, 9, 27),
+            rate=0.0063,
+            source="test",
+        ),
+        # JPY -> USD but after target date (should be ignored)
+        ExchangeRate(
+            from_currency="JPY",
+            to_currency="USD",
             date=date(2025, 9, 28),
-            rate=146.0,
+            rate=0.00685,
             source="test",
         ),
     ]
@@ -216,13 +216,13 @@ def test_find_rates_by_base_currency(clean_db: Session):
     assert len(results) == 2
     results_dict = {(r.from_currency, r.to_currency): r for r in results}
 
-    # Check USD -> JPY rate
-    assert ("USD", "JPY") in results_dict
-    assert results_dict[("USD", "JPY")].rate == 145.0
-    assert results_dict[("USD", "JPY")].date == date(2025, 9, 26)
+    # Check JPY -> USD rate
+    assert ("JPY", "USD") in results_dict
+    assert results_dict[("JPY", "USD")].rate == 0.0069
+    assert results_dict[("JPY", "USD")].date == date(2025, 9, 26)
 
-    # Check USD -> EUR rate
-    assert ("USD", "EUR") in results_dict
-    assert results_dict[("USD", "EUR")].rate == 0.95
-    assert results_dict[("USD", "EUR")].date == date(2025, 9, 27)
+    # Check EUR -> USD rate
+    assert ("EUR", "USD") in results_dict
+    assert results_dict[("EUR", "USD")].rate == 1.05
+    assert results_dict[("EUR", "USD")].date == date(2025, 9, 27)
 
