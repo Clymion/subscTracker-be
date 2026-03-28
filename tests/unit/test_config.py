@@ -447,3 +447,404 @@ class TestIsTestingFunction:
 
         # Act & Assert
         assert is_testing() is False
+
+
+class TestDatabaseUrlGeneration:
+    """Test database_url property generation for different drivers.
+
+    Requirements: 1.1, 1.2, 1.3, 1.4
+    """
+
+    def test_database_url_generates_sqlite_url_by_default(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that database_url generates SQLite URL when DB_DRIVER is sqlite.
+
+        Requirement: 1.2 - SQLite接続URL生成
+        """
+        # Arrange: Set DB_DRIVER to sqlite with minimal required vars
+        monkeypatch.setenv("DB_DRIVER", "sqlite")
+        monkeypatch.setenv("DB_NAME", "test_app.db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+        monkeypatch.delenv("DB_HOST", raising=False)
+        monkeypatch.delenv("DB_PORT", raising=False)
+        monkeypatch.delenv("DB_USER", raising=False)
+        monkeypatch.delenv("DB_PASSWORD", raising=False)
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        config = AppConfig()
+
+        # Assert: Should generate SQLite URL
+        assert config.database_url.startswith("sqlite:///")
+        assert "test_app.db" in config.database_url
+
+    def test_database_url_generates_mysql_url_for_tidb(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that database_url generates MySQL URL when DB_DRIVER is mysql.
+
+        Requirement: 1.1 - MySQL互換(TiDB)接続URL生成
+        Requirement: 1.3 - mysql+pymysqlドライバー使用
+        """
+        # Arrange: Set DB_DRIVER to mysql with all required vars
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-server")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "tidb_user")
+        monkeypatch.setenv("DB_PASSWORD", "tidb_password")
+        monkeypatch.setenv("DB_NAME", "subscription_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+
+        # Assert: Should generate MySQL URL with pymysql driver
+        assert config.database_url.startswith("mysql+pymysql://")
+        assert "tidb_user:tidb_password@tidb-server:4000/subscription_db" in config.database_url
+
+    def test_database_url_includes_all_tidb_connection_params(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that database_url includes all TiDB connection parameters.
+
+        Requirement: 1.4 - 環境変数からTiDB接続情報読み込み
+        """
+        # Arrange: Set all TiDB connection parameters
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-cluster.example.com")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "app_user")
+        monkeypatch.setenv("DB_PASSWORD", "secure_password")
+        monkeypatch.setenv("DB_NAME", "production_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+
+        # Assert: All connection params should be in URL
+        url = config.database_url
+        assert "tidb-cluster.example.com" in url  # DB_HOST
+        assert "4000" in url  # DB_PORT
+        assert "app_user" in url  # DB_USER
+        assert "secure_password" in url  # DB_PASSWORD
+        assert "production_db" in url  # DB_NAME
+
+    def test_database_url_handles_empty_password_for_mysql(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that database_url handles empty password for MySQL/TiDB."""
+        # Arrange: Set mysql driver with empty password
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "localhost")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "root")
+        monkeypatch.setenv("DB_PASSWORD", "")  # Empty password
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+
+        # Assert: Should handle empty password gracefully
+        assert config.database_url == "mysql+pymysql://root:@localhost:4000/test_db"
+
+    def test_database_url_raises_error_for_unsupported_driver(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that unsupported DB_DRIVER raises ValueError."""
+        # Arrange: Set unsupported driver
+        monkeypatch.setenv("DB_DRIVER", "postgres")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+
+        # Assert: Should raise ValueError when accessing database_url
+        with pytest.raises(ValueError, match="Unsupported DB_DRIVER"):
+            _ = config.database_url
+
+
+class TestMysqlDriverValidation:
+    """Test MySQL/TiDB driver-specific validation.
+
+    Requirement: 1.5 - TiDB必須設定のバリデーション
+    Note: These tests are for Task 1.2 (validation), Task 1.1 is URL generation only.
+    """
+
+    def test_mysql_driver_requires_all_connection_params(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that mysql driver requires all connection parameters."""
+        # Arrange: Set mysql driver with all required fields
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act & Assert: Should not raise error
+        config = AppConfig()
+        assert config.DB_DRIVER == "mysql"
+
+    def test_sqlite_driver_does_not_require_connection_params(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that sqlite driver does not require connection params.
+
+        Requirement: 1.5 - SQLiteの場合はバリデーションをスキップ
+        """
+        # Arrange: Set sqlite driver without connection params
+        monkeypatch.setenv("DB_DRIVER", "sqlite")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+        monkeypatch.delenv("DB_HOST", raising=False)
+        monkeypatch.delenv("DB_PORT", raising=False)
+        monkeypatch.delenv("DB_USER", raising=False)
+        monkeypatch.delenv("DB_PASSWORD", raising=False)
+        monkeypatch.chdir(tmp_path)
+
+        # Act & Assert: Should not raise error
+        config = AppConfig()
+        assert config.DB_DRIVER == "sqlite"
+        assert config.database_url.startswith("sqlite:///")
+
+    @pytest.mark.parametrize(
+        "missing_field",
+        ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"],
+    )
+    def test_mysql_driver_raises_error_when_required_field_missing(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+        missing_field: str,
+    ) -> None:
+        """Test that mysql driver raises error when required field is missing.
+
+        Requirement: 1.5 - 欠落しているフィールドがある場合、起動時に明確なエラーメッセージを表示
+        """
+        # Arrange: Set mysql driver with all required fields
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Delete one required field
+        monkeypatch.delenv(missing_field, raising=False)
+
+        # Isolate from project's .env file by changing the current directory
+        monkeypatch.chdir(tmp_path)
+
+        # Act & Assert: Should raise ValidationError with clear message
+        with pytest.raises(ValidationError) as exc_info:
+            AppConfig()
+
+        # Verify error message mentions the missing field
+        errors = exc_info.value.errors()
+        error_messages = [str(e) for e in errors]
+        assert any(missing_field in msg for msg in error_messages)
+
+    def test_mysql_driver_validation_error_message_is_clear(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that validation error message clearly indicates missing field.
+
+        Requirement: 1.5 - 欠落しているフィールドがある場合、起動時に明確なエラーメッセージを表示
+        """
+        # Arrange: Set mysql driver without DB_HOST
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.delenv("DB_HOST", raising=False)
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Isolate from project's .env file
+        monkeypatch.chdir(tmp_path)
+
+        # Act & Assert: Should raise ValidationError with clear message
+        with pytest.raises(ValidationError) as exc_info:
+            AppConfig()
+
+        # Verify error message is clear about which field is missing
+        error_str = str(exc_info.value)
+        assert "DB_HOST" in error_str
+        assert "mysql" in error_str.lower() or "required" in error_str.lower()
+
+
+class TestConnectionPoolSettings:
+    """Test connection pool settings for different database drivers.
+
+    Requirements: 7.1, 7.2, 7.4 - 接続プール設定
+    Task: 1.3 - 接続プール設定の実装
+    """
+
+    def test_sqlite_does_not_include_pool_settings(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that SQLite connection does not include pool settings.
+
+        Requirement: 7.1, 7.2, 7.4 - SQLite接続時はプール設定をスキップ
+        """
+        # Arrange: Set sqlite driver
+        monkeypatch.setenv("DB_DRIVER", "sqlite")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: SQLite should not have pool settings
+        assert "SQLALCHEMY_ENGINE_OPTIONS" not in flask_config
+
+    def test_mysql_includes_pool_settings(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that MySQL/TiDB connection includes pool settings.
+
+        Requirement: 7.1, 7.2, 7.4 - TiDB接続用のプール設定を提供
+        """
+        # Arrange: Set mysql driver with all required fields
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: MySQL should have pool settings
+        assert "SQLALCHEMY_ENGINE_OPTIONS" in flask_config
+        engine_opts = flask_config["SQLALCHEMY_ENGINE_OPTIONS"]
+        assert "pool_size" in engine_opts
+        assert "pool_recycle" in engine_opts
+        assert "pool_pre_ping" in engine_opts
+
+    def test_mysql_pool_size_is_configurable(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that pool_size is set for MySQL/TiDB connections.
+
+        Requirement: 7.1 - 適切な接続プールサイズを設定
+        """
+        # Arrange
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: pool_size should be a positive integer
+        pool_size = flask_config["SQLALCHEMY_ENGINE_OPTIONS"]["pool_size"]
+        assert isinstance(pool_size, int)
+        assert pool_size > 0
+
+    def test_mysql_pool_recycle_is_set(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that pool_recycle is set for MySQL/TiDB connections.
+
+        Requirement: 7.2 - アイドル接続管理
+        """
+        # Arrange
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: pool_recycle should be a positive integer (seconds)
+        pool_recycle = flask_config["SQLALCHEMY_ENGINE_OPTIONS"]["pool_recycle"]
+        assert isinstance(pool_recycle, int)
+        assert pool_recycle > 0
+
+
+class TestPoolPrePing:
+    """Test pool_pre_ping functionality for connection health checks.
+
+    Requirement: 7.3 - 再接続試行機能
+    Task: 1.4 - 再接続試行機能の確認
+    """
+
+    def test_pool_pre_ping_enabled_for_mysql(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that pool_pre_ping is enabled for MySQL/TiDB connections.
+
+        Requirement: 7.3, 7.4 - 接続の健全性を確認
+        """
+        # Arrange
+        monkeypatch.setenv("DB_DRIVER", "mysql")
+        monkeypatch.setenv("DB_HOST", "tidb-host")
+        monkeypatch.setenv("DB_PORT", "4000")
+        monkeypatch.setenv("DB_USER", "user")
+        monkeypatch.setenv("DB_PASSWORD", "password")
+        monkeypatch.setenv("DB_NAME", "test_db")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: pool_pre_ping should be True
+        assert flask_config["SQLALCHEMY_ENGINE_OPTIONS"]["pool_pre_ping"] is True
+
+    def test_pool_pre_ping_not_set_for_sqlite(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that pool_pre_ping is not set for SQLite connections.
+
+        SQLite does not benefit from pool_pre_ping as it's a file-based DB.
+        """
+        # Arrange
+        monkeypatch.setenv("DB_DRIVER", "sqlite")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-123456")
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        config = AppConfig()
+        flask_config = config.to_flask_config()
+
+        # Assert: No engine options for SQLite
+        assert "SQLALCHEMY_ENGINE_OPTIONS" not in flask_config

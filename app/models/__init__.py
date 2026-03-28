@@ -11,11 +11,12 @@ from sqlalchemy.engine import Engine
 
 
 @event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection: SQLiteConnection, _connection_record) -> None:
-    """Enable foreign key constraints for SQLite connections."""
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON")
-    cursor.close()
+def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
+    """Enable foreign key constraints for SQLite connections only."""
+    if isinstance(dbapi_connection, SQLiteConnection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON")
+        cursor.close()
 
 
 db = SQLAlchemy()

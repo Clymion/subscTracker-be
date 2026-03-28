@@ -34,11 +34,11 @@ class AppConfig(BaseSettings):
         default="sqlite",
         description="Database driver to use (e.g., sqlite, mysql, postgres)",
     )
-    DB_HOST: str = Field(default="localhost", description="Database host")
-    DB_PORT: int = Field(default=5432, description="Database port")
-    DB_NAME: str = Field(default="instance/app.db", description="Database name")
-    DB_USER: str = Field(default="postgres", description="Database user")
-    # DB_PASSWORDはオプションで、デフォルトはNone
+    # TiDB/MySQL接続用フィールド（sqliteの場合はオプション）
+    DB_HOST: str | None = Field(default=None, description="Database host")
+    DB_PORT: int | None = Field(default=None, description="Database port")
+    DB_NAME: str | None = Field(default=None, description="Database name")
+    DB_USER: str | None = Field(default=None, description="Database user")
     DB_PASSWORD: str | None = Field(default=None, description="Database password")
 
     # API settings - デフォルト値あり
@@ -68,10 +68,19 @@ class AppConfig(BaseSettings):
         description="Enable new billing feature",
     )
 
-    @field_validator("DB_PORT", "API_PORT")
+    @field_validator("DB_PORT", "API_PORT", mode="before")
     @classmethod
-    def validate_port_range(cls, v: int) -> int:
+    def validate_port_range(cls, v: int | str | None) -> int | None:
         """ポート番号が有効な範囲内であることを検証"""
+        if v is None:
+            return v
+        # 文字列の場合はintに変換
+        if isinstance(v, str):
+            try:
+                v = int(v)
+            except ValueError:
+                msg = "Port must be a valid integer"
+                raise ValueError(msg) from None
         if v <= 0 or v > 65535:
             msg = "Port must be between 1 and 65535"
             raise ValueError(msg)
@@ -88,10 +97,17 @@ class AppConfig(BaseSettings):
                 "DB_PASSWORD",
                 "DB_NAME",
             ]
-            for field in required_fields:
-                if getattr(self, field) is None:
-                    msg = f"{field} is required for the '{self.DB_DRIVER}' driver"
-                    raise ValueError(msg)
+            missing_fields = [
+                field for field in required_fields if getattr(self, field) is None
+            ]
+            if missing_fields:
+                msg = (
+                    f"Missing required fields for '{self.DB_DRIVER}' driver: "
+                    f"{', '.join(missing_fields)}. "
+                    f"Please set the following environment variables: "
+                    f"{', '.join(missing_fields)}"
+                )
+                raise ValueError(msg)
         return self
 
     @field_validator("JWT_ACCESS_TOKEN_EXPIRES", "JWT_REFRESH_TOKEN_EXPIRES")
@@ -129,15 +145,25 @@ class AppConfig(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Generate SQLite database URL for production."""
-        # 絶対パスを構築して、パスの曖昧さをなくす
-        db_path = BASE_DIR / self.DB_NAME
-        # WindowsとLinuxの両方で動くように os.path.normpath を使うとより堅牢
-        return f"sqlite:///{os.path.normpath(str(db_path))}"
+        """Generate database URL based on DB_DRIVER."""
+        if self.DB_DRIVER == "sqlite":
+            # SQLite: デフォルトはinstance/app.db
+            db_name = self.DB_NAME or "instance/app.db"
+            db_path = BASE_DIR / db_name
+            return f"sqlite:///{os.path.normpath(str(db_path))}"
+        elif self.DB_DRIVER == "mysql":
+            # MySQL/TiDB: 必須フィールドはvalidate_db_dependenciesで検証済み
+            password = self.DB_PASSWORD or ""
+            return f"mysql+pymysql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        raise ValueError(f"Unsupported DB_DRIVER: {self.DB_DRIVER}")
 
     def to_flask_config(self) -> dict:
-        """Convert to Flask test configuration format."""
-        return {
+        """Convert to Flask configuration format.
+
+        MySQL/TiDB接続時は接続プール設定を含める。
+        SQLite接続時はプール設定をスキップ（SQLiteは接続プールを使用しないため）。
+        """
+        config = {
             "SQLALCHEMY_DATABASE_URI": self.database_url,
             "SQLALCHEMY_TRACK_MODIFICATIONS": False,
             "JWT_SECRET_KEY": self.JWT_SECRET_KEY,
@@ -147,6 +173,16 @@ class AppConfig(BaseSettings):
             "DEBUG": self.DEBUG,
             "TESTING": False,
         }
+
+        # MySQL/TiDB接続時のみ接続プール設定を追加
+        if self.DB_DRIVER == "mysql":
+            config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+                "pool_size": 5,
+                "pool_recycle": 3600,
+                "pool_pre_ping": True,
+            }
+
+        return config
 
 
 class TestConfig(BaseSettings):
@@ -165,8 +201,9 @@ class TestConfig(BaseSettings):
     )
 
     # テスト用の安全なデフォルト値
+    DB_DRIVER: str = "sqlite"
     DB_HOST: str = "localhost"
-    DB_PORT: int = 5432
+    DB_PORT: int = 3306
     DB_NAME: str = ":memory:"  # SQLiteのインメモリDB
     DB_USER: str = "test_user"
     DB_PASSWORD: str = "test_password"  # noqa: S105
@@ -206,11 +243,15 @@ class TestConfig(BaseSettings):
     @property
     def database_url(self) -> str:
         """テスト用データベースURL生成"""
-        if self.DB_NAME == ":memory:":
-            return "sqlite:///:memory:"
+        if self.DB_DRIVER == "sqlite":
+            if self.DB_NAME == ":memory:":
+                return "sqlite:///:memory:"
+            db_path = BASE_DIR / self.DB_NAME
+            return f"sqlite:///{os.path.normpath(str(db_path))}"
 
-        db_path = BASE_DIR / self.DB_NAME
-        return f"sqlite:///{os.path.normpath(str(db_path))}"
+        # MySQL mode for testing
+        password = self.DB_PASSWORD or ""
+        return f"mysql+pymysql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     def to_flask_config(self) -> dict:
         """Convert to Flask test configuration format."""

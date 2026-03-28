@@ -11,26 +11,26 @@
 ### Phase 1: Configuration Layer
 
 - [ ] 1. TiDB接続設定の実装 (P)
-- [ ] 1.1 (P) AppConfigにTiDB接続URL生成機能を追加
+- [x] 1.1 (P) AppConfigにTiDB接続URL生成機能を追加
   - `DB_DRIVER`環境変数に基づいて接続URLを生成するプロパティを実装
   - `sqlite`の場合は既存のSQLite接続URLを生成
   - `mysql`の場合は`mysql+pymysql`ドライバーを使用してTiDB接続URLを生成
   - 環境変数から`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`を読み込み
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 1.2 (P) TiDB必須設定のバリデーション実装
+- [x] 1.2 (P) TiDB必須設定のバリデーション実装
   - `DB_DRIVER=mysql`の場合に必須フィールドが設定されているか検証
   - 欠落しているフィールドがある場合、起動時に明確なエラーメッセージを表示
   - SQLiteの場合はバリデーションをスキップ
   - _Requirements: 1.5_
 
-- [ ] 1.3 (P) 接続プール設定の実装
+- [x] 1.3 (P) 接続プール設定の実装
   - `to_flask_config`メソッドでTiDB接続用のプール設定を提供
   - `pool_size`, `pool_recycle`, `pool_pre_ping`を適切に設定
   - SQLite接続時はプール設定をスキップ
   - _Requirements: 7.1, 7.2, 7.4_
 
-- [ ] 1.4 (P) 再接続試行機能の確認
+- [x] 1.4 (P) 再接続試行機能の確認
   - SQLAlchemyの`pool_pre_ping`による接続健全性確認が動作することを確認
   - 接続失敗時のエラーハンドリングを確認
   - _Requirements: 7.3_

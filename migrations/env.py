@@ -1,5 +1,6 @@
 """Migrations environment setup for Alembic."""
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -16,18 +17,17 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Set database URL from environment variable or app config
+if os.getenv("DATABASE_URL"):
+    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+else:
+    from app.config import get_config
+    app_config = get_config()
+    config.set_main_option("sqlalchemy.url", app_config.database_url)
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = db.metadata
-
-
-def include_object(object, name, type_, reflected, compare_to):
-    """
-    Exclude Litestream internal tables from autogeneration.
-    """
-    if type_ == "table" and name and name.startswith("_litestream_"):
-        return False
-    return True
 
 
 def run_migrations_offline() -> None:
@@ -49,7 +49,6 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -73,7 +72,6 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         context.configure(
             connection=connection, target_metadata=target_metadata,
-            include_object=include_object,
         )
 
         with context.begin_transaction():
@@ -83,4 +81,4 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    run_migrations_online()"
