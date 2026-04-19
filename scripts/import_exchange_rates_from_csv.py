@@ -1,5 +1,5 @@
 """
-Import historical exchange rates from a CSV file into the local SQLite DB.
+Import historical exchange rates from a CSV file into the DB.
 
 Expected CSV format (example header):
 UTC,Open,High,Low,Close,Volume
@@ -11,9 +11,6 @@ Filename should contain the currency pair in the form `FROM-TO_...`, for example
 The script will insert/update rows into the `exchange_rates` table. It will also
 optionally create same-currency synthetic rates (rate=1.0) for both currencies
 for each date present in the CSV to avoid missing-parent FK issues.
-
-This script follows the project's existing scripts style and talks directly to
-the sqlite database file (no Flask app context needed).
 """
 
 from __future__ import annotations
@@ -26,14 +23,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from db import build_upsert_sql, get_db_connection
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     stream=sys.stdout,
 )
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = PROJECT_ROOT / "instance" / "app.db"
 
 
 def infer_pair_from_filename(filename: str) -> tuple[str, str] | None:
@@ -71,7 +67,7 @@ def parse_csv_rows(path: Path) -> list[tuple[datetime.date, float]]:
     rows: list[tuple[datetime.date, float]] = []
     with path.open("r", newline="", encoding="utf-8") as fh:
         reader = csv.reader(fh)
-        header = next(reader, None)
+        next(reader, None)  # skip header
         for r in reader:
             if not r or len(r) < 5:
                 continue
@@ -92,47 +88,42 @@ def parse_csv_rows(path: Path) -> list[tuple[datetime.date, float]]:
     return rows
 
 
+_EXCHANGE_RATE_COLUMNS = [
+    "from_currency",
+    "to_currency",
+    "rate",
+    "source",
+    "date",
+    "created_at",
+    "updated_at",
+]
+_EXCHANGE_RATE_CONFLICT_KEYS = ["from_currency", "to_currency", "date"]
+
+
 def insert_rates(
-    db_path: str,
+    conn: Any,
+    driver: str,
     from_currency: str,
     to_currency: str,
     rates: list[tuple[datetime.date, float]],
     source: str = "csv-import",
     create_synthetic: bool = True,
 ) -> None:
-    """Insert exchange rates into the database."""
-    import sqlite3
-
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    """Insert/upsert exchange rates into the database."""
+    sql = build_upsert_sql(
+        driver,
+        table="exchange_rates",
+        columns=_EXCHANGE_RATE_COLUMNS,
+        conflict_keys=_EXCHANGE_RATE_CONFLICT_KEYS,
+    )
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-    # Prepare inserts for the pair
     pair_rows = [
-        (
-            from_currency,
-            to_currency,
-            rate,
-            source,
-            d.isoformat(),
-            now,
-            now,
-        )
+        (from_currency, to_currency, rate, source, d.isoformat(), now, now)
         for d, rate in rates
     ]
 
-    # Insert SQL (UPSERT)
-    sql = """
-        INSERT INTO exchange_rates (
-            from_currency, to_currency, rate, source, date,
-            created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(from_currency, to_currency, date) DO UPDATE SET
-            rate = excluded.rate,
-            source = excluded.source,
-            updated_at = excluded.updated_at
-    """
-
+    cursor = conn.cursor()
     try:
         if pair_rows:
             cursor.executemany(sql, pair_rows)
@@ -143,26 +134,32 @@ def insert_rates(
                 to_currency,
             )
 
-        # Optionally create same-currency synthetic rates for both currencies seen in the CSV
         if create_synthetic and rates:
             dates = {d for d, _ in rates}
-            synthetic_rows: list[tuple[Any, ...]] = []
-            for d in sorted(dates):
-                iso = d.isoformat()
-                synthetic_rows.append(
+            synthetic_rows: list[tuple[Any, ...]] = [
+                row
+                for d in sorted(dates)
+                for row in (
                     (
                         from_currency,
                         from_currency,
                         1.0,
                         "synthetic-import",
-                        iso,
+                        d.isoformat(),
+                        now,
+                        now,
+                    ),
+                    (
+                        to_currency,
+                        to_currency,
+                        1.0,
+                        "synthetic-import",
+                        d.isoformat(),
                         now,
                         now,
                     ),
                 )
-                synthetic_rows.append(
-                    (to_currency, to_currency, 1.0, "synthetic-import", iso, now, now),
-                )
+            ]
             cursor.executemany(sql, synthetic_rows)
             logging.info(
                 "Inserted/updated %d synthetic same-currency rows",
@@ -170,12 +167,12 @@ def insert_rates(
             )
 
         conn.commit()
-    except sqlite3.Error:
+    except Exception:
         logging.exception("Database error while inserting exchange rates")
         conn.rollback()
         raise
     finally:
-        conn.close()
+        cursor.close()
 
 
 def main() -> None:
@@ -186,8 +183,11 @@ def main() -> None:
     parser.add_argument("--file", "-f", required=True, help="Path to CSV file")
     parser.add_argument(
         "--db-path",
-        default=str(DB_PATH),
-        help="Path to sqlite DB file",
+        default=None,
+        help=(
+            "SQLite DB ファイルパス (SQLite 使用時のみ有効。"
+            "AppConfig で mysql が設定されている場合は無視されます)"
+        ),
     )
     parser.add_argument(
         "--from-to",
@@ -230,27 +230,34 @@ def main() -> None:
         sys.exit(1)
 
     try:
+        conn, driver = get_db_connection(db_path=args.db_path)
+    except Exception:
+        logging.exception("データベース接続に失敗しました")
+        sys.exit(1)
+
+    try:
         insert_rates(
-            args.db_path,
-            from_currency,
-            to_currency,
-            rows,
+            conn=conn,
+            driver=driver,
+            from_currency=from_currency,
+            to_currency=to_currency,
+            rates=rows,
             source=f"csv:{csv_path.name}",
             create_synthetic=args.create_synthetic,
         )
         logging.info(
-            "Import complete for %s->%s (%d rows)",
+            "Import complete for %s->%s (%d rows) [driver=%s]",
             from_currency,
             to_currency,
             len(rows),
+            driver,
         )
     except Exception:
         logging.exception("Import failed")
         sys.exit(1)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
-    # Make project importable if needed by other scripts
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
     main()

@@ -108,14 +108,12 @@ class PaymentRegistrationBatchService:
                     # Nothing to do for this subscription
                     continue
 
-                histories_to_create = []
+                # Pre-create synthetic exchange rates for same-currency
+                # conversions before building PaymentHistory rows. This avoids
+                # foreign-key failures when the session is flushed.
+                synthetic_rates_added = []
                 for p_date in payment_dates:
-                    rate = None
-                    # If subscription currency equals user's base currency, treat
-                    # it as a 1:1 conversion. Ensure an ExchangeRate row exists
-                    # within the same transaction by flushing the session.
                     if subscription.currency == subscription.user.base_currency:
-                        rate = 1.0
                         existing_rate = exchange_rate_repo.find_rate_by_date(
                             p_date,
                             subscription.currency,
@@ -130,22 +128,33 @@ class PaymentRegistrationBatchService:
                                 source="internal",
                             )
                             self.session.add(synthetic)
-                            try:
-                                # Persist the synthetic rate immediately so the
-                                # FK reference from PaymentHistory can be satisfied.
-                                # This sacrifices per-subscription atomicity for the
-                                # synthetic row but avoids FOREIGN KEY failures
-                                # caused by flush/ordering differences.
-                                self.session.commit()
-                            except Exception:
-                                self.session.rollback()
-                                logger.exception(
-                                    "Failed to commit synthetic exchange rate",
-                                )
-                                raise
+                            synthetic_rates_added.append(synthetic)
+
+                # Flush synthetic rates to DB so FK constraint is satisfied
+                if synthetic_rates_added:
+                    self.session.flush()
+
+                histories_to_create = []
+                for p_date in payment_dates:
+                    rate = None
+                    rate_date_used = p_date
+
+                    # If subscription currency equals user's base currency, use
+                    # 1:1 conversion. Synthetic rates were pre-created above.
+                    if subscription.currency == subscription.user.base_currency:
+                        rate = 1.0
+                        # 同一通貨の場合も、既存のレートの日付を使用する
+                        # （find_rate_by_date は date <= p_date で検索するため）
+                        existing_rate = exchange_rate_repo.find_rate_by_date(
+                            p_date,
+                            subscription.currency,
+                            subscription.user.base_currency,
+                        )
+                        if existing_rate:
+                            rate_date_used = existing_rate.date
                     else:
                         try:
-                            rate_obj = exchange_rate_service.get_exchange_rate(
+                            rate_obj, inverted = exchange_rate_service.get_exchange_rate(
                                 p_date,
                                 subscription.currency,
                                 subscription.user.base_currency,
@@ -163,8 +172,10 @@ class PaymentRegistrationBatchService:
                         # rate on or before p_date). Using p_date here caused
                         # FOREIGN KEY constraint failures when the rate date
                         # differed from p_date.
-                        rate = getattr(rate_obj, "rate", rate_obj)
-                        rate_date_used = getattr(rate_obj, "date", p_date)
+                        rate = rate_obj.rate
+                        if inverted:
+                            rate = 1.0 / rate
+                        rate_date_used = rate_obj.date
 
                     histories_to_create.append(
                         PaymentHistory(
@@ -182,11 +193,7 @@ class PaymentRegistrationBatchService:
                             exchange_rate=rate,
                             rate_from_currency=subscription.currency,
                             rate_to_currency=subscription.user.base_currency,
-                            rate_date=(
-                                rate_date_used
-                                if "rate_date_used" in locals()
-                                else p_date
-                            ),
+                            rate_date=rate_date_used,
                             payment_method=subscription.payment_method,
                         ),
                     )

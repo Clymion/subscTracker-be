@@ -5,13 +5,14 @@ import pytest
 
 from app.common.result import Result
 from app.constants import CurrencyConstants, PaymentFrequency, SubscriptionStatus
+from app.models.exchange_rate import ExchangeRate
 from app.models.payment_history import PaymentHistory
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.services.payment_registration_batch_service import (
-    BatchSummary,
     PaymentRegistrationBatchService,
 )
+
 
 # Since the service now instantiates its own dependencies,
 # we need to patch the classes themselves.
@@ -138,10 +139,18 @@ class TestPaymentRegistrationBatchService:
         next_due_date = date(2024, 3, 15)
 
         mock_subscription_repo.find_due_subscriptions.return_value = [due_subscription]
-        mock_payment_history_repo.find_latest_by_subscription_id.return_value = PaymentHistory(
-            payment_date=date(2024, 1, 15)
+        mock_payment_history_repo.find_latest_by_subscription_id.return_value = (
+            PaymentHistory(payment_date=date(2024, 1, 15))
         )
-        mock_exchange_rate_service.get_rate.return_value = Result.Ok(150.0)
+        # get_exchange_rate returns (ExchangeRate, inverted: bool)
+        mock_rate = ExchangeRate(
+            from_currency="USD",
+            to_currency="JPY",
+            date=date(2024, 2, 15),
+            rate=150.0,
+            source="test",
+        )
+        mock_exchange_rate_service.get_exchange_rate.return_value = (mock_rate, False)
 
         with patch("app.services.payment_registration_batch_service.date") as mock_date:
             mock_date.today.return_value = today
@@ -169,7 +178,15 @@ class TestPaymentRegistrationBatchService:
             due_subscription_for_backfill
         ]
         mock_payment_history_repo.find_latest_by_subscription_id.return_value = None
-        mock_exchange_rate_service.get_rate.return_value = Result.Ok(160.0)
+        # get_exchange_rate returns (ExchangeRate, inverted: bool)
+        mock_rate = ExchangeRate(
+            from_currency="USD",
+            to_currency="JPY",
+            date=date(2024, 2, 1),
+            rate=160.0,
+            source="test",
+        )
+        mock_exchange_rate_service.get_exchange_rate.return_value = (mock_rate, False)
 
         with patch("app.services.payment_registration_batch_service.date") as mock_date:
             mock_date.today.return_value = today
@@ -183,7 +200,12 @@ class TestPaymentRegistrationBatchService:
         )
 
     def test_execute_rollback_on_failure(
-        self, service, mock_db, mock_subscription_repo, mock_payment_history_repo, due_subscription
+        self,
+        service,
+        mock_db,
+        mock_subscription_repo,
+        mock_payment_history_repo,
+        due_subscription,
     ):
         today = date(2024, 2, 20)
         mock_subscription_repo.find_due_subscriptions.return_value = [due_subscription]
@@ -197,7 +219,7 @@ class TestPaymentRegistrationBatchService:
         assert result.is_ok()
         summary = result.unwrap()
         assert summary.failed == 1
-        
+
         # Verify that rollback was called on the session mock
         mock_db.session.rollback.assert_called_once()
         mock_db.session.commit.assert_not_called()
