@@ -9,6 +9,8 @@ from flask_jwt_extended import get_jwt_identity
 from app.common.auth_middleware import jwt_required_custom
 from app.common.logging_setup import get_logger
 from app.common.response_utils import success_response
+from app.constants import ErrorMessages
+from app.exceptions import InvalidPasswordError, UserNotFoundError
 from app.models import db
 from app.services.user_service import UserService
 
@@ -81,3 +83,68 @@ def update_user(user_id: int) -> tuple[Response, int]:
         "base_currency": user.base_currency,
         "created_at": user.created_at.isoformat(),
     })
+
+
+@user_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@jwt_required_custom
+def delete_user(user_id: int) -> tuple[Response, int]:
+    """
+    ユーザーアカウントを削除する。
+
+    Args:
+        user_id: 削除対象のユーザーID
+
+    Returns:
+        204 No Content on success
+        400 Bad Request for validation errors
+        403 Forbidden for authorization errors
+        404 Not Found if user doesn't exist
+        500 Internal Server Error for unexpected errors
+    """
+    current_user_id = get_jwt_identity()
+
+    # 自分のアカウントのみ削除可能
+    if int(current_user_id) != user_id:
+        logger.warning(
+            f"Delete attempt denied: user {current_user_id} tried to delete user {user_id}"
+        )
+        return (
+            jsonify(
+                {"error": {"code": 403, "message": ErrorMessages.CANNOT_DELETE_OTHER_USER}},
+            ),
+            403,
+        )
+
+    data = request.get_json()
+    if data is None or "password" not in data:
+        return (
+            jsonify({"error": {"code": 400, "message": ErrorMessages.PASSWORD_REQUIRED}}),
+            400,
+        )
+
+    password = data.get("password")
+    if not password:
+        return (
+            jsonify({"error": {"code": 400, "message": ErrorMessages.PASSWORD_REQUIRED}}),
+            400,
+        )
+
+    try:
+        user_service.delete_user(user_id, password)
+        return "", 204
+    except UserNotFoundError:
+        return (
+            jsonify({"error": {"code": 404, "message": "ユーザーが見つかりません"}}),
+            404,
+        )
+    except InvalidPasswordError:
+        return (
+            jsonify({"error": {"code": 400, "message": ErrorMessages.INVALID_PASSWORD}}),
+            400,
+        )
+    except Exception as e:
+        logger.exception(f"Unexpected error during user deletion: {e}")
+        return (
+            jsonify({"error": {"code": 500, "message": "Internal server error"}}),
+            500,
+        )

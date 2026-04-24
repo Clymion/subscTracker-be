@@ -224,3 +224,8 @@ class ErrorMessages:
     PASSWORDS_DO_NOT_MATCH = "Passwords do not match"
     DUPLICATE_USERNAME = "A user with this username already exists"
     DUPLICATE_EMAIL = "A user with this email already exists"
+
+    # User deletion errors
+    INVALID_PASSWORD = "パスワードが正しくありません"
+    PASSWORD_REQUIRED = "パスワードが必要です"
+    CANNOT_DELETE_OTHER_USER = "他のユーザーのアカウントは削除できません"

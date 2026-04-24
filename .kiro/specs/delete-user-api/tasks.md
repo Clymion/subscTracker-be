@@ -14,12 +14,12 @@
 ## タスク一覧
 
 - [ ] 1. テスト前提となる例外・定数の準備
-- [ ] 1.1 ユーザー削除用例外クラスの定義
+- [x] 1.1 ユーザー削除用例外クラスの定義
   - `UserNotFoundError`例外クラスを定義
   - `InvalidPasswordError`例外クラスを定義
   - _Requirements: 1.3, 2.2_
 
-- [ ] 1.2 エラーメッセージ定数の追加
+- [x] 1.2 エラーメッセージ定数の追加
   - `INVALID_PASSWORD`メッセージを追加
   - `PASSWORD_REQUIRED`メッセージを追加
   - `CANNOT_DELETE_OTHER_USER`メッセージを追加
@@ -28,13 +28,13 @@
 ---
 
 - [ ] 2. Repository層の実装（TDD）
-- [ ] 2.1 UserRepository.deleteのテストを書く（Red）
+- [x] 2.1 UserRepository.deleteのテストを書く（Red）
   - 正常系: ユーザー削除成功のテストケース
   - カスケード削除確認: subscriptions, labels, payment_historiesの削除
   - テストを実行して失敗することを確認
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 2.2 UserRepository.deleteを実装（Green）
+- [x] 2.2 UserRepository.deleteを実装（Green）
   - ユーザーレコード削除メソッドを実装
   - セッション削除とコミット処理
   - テストを実行して成功することを確認
@@ -43,14 +43,14 @@
 ---
 
 - [ ] 3. Service層の実装（TDD）
-- [ ] 3.1 UserService.delete_userのテストを書く（Red）
+- [x] 3.1 UserService.delete_userのテストを書く（Red）
   - 正常系: ユーザー削除成功
   - 異常系: ユーザー不在時のUserNotFoundError
   - 異常系: パスワード不一致時のInvalidPasswordError
   - テストを実行して失敗することを確認
   - _Requirements: 1.3, 2.2, 6.1, 6.2_
 
-- [ ] 3.2 UserService.delete_userを実装（Green）
+- [x] 3.2 UserService.delete_userを実装（Green）
   - ユーザー存在確認処理
   - パスワード検証処理（User.check_password使用）
   - Repositoryのdeleteメソッド呼び出し
@@ -61,7 +61,7 @@
 ---
 
 - [ ] 4. API層の実装（TDD）
-- [ ] 4.1 DELETE /users/{userId}のテストを書く（Red）
+- [x] 4.1 DELETE /users/{userId}のテストを書く（Red）
   - 正常系: 204 No Content返却
   - 認証エラー: 401 Unauthorized
   - 認可エラー: 他ユーザー削除試行時の403 Forbidden
@@ -70,7 +70,7 @@
   - テストを実行して失敗することを確認
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3_
 
-- [ ] 4.2 DELETE /users/{userId}エンドポイントを実装（Green）
+- [x] 4.2 DELETE /users/{userId}エンドポイントを実装（Green）
   - JWT認証デコレータの適用
   - パスパラメータとトークンIDの整合性チェック
   - リクエストボディからパスワード取得
@@ -83,7 +83,7 @@
 ---
 
 - [ ] 5. リファクタリング
-- [ ] 5.1 コードの整理と改善
+- [x] 5.1 コードの整理と改善
   - テストが通った状態でリファクタリング実施
   - 重複コードの除去
   - 可読性の向上
@@ -93,7 +93,7 @@
 ---
 
 - [ ] 6. 追加検証
-- [ ] 6.1 関連データ削除の統合テスト
+- [x] 6.1 関連データ削除の統合テスト
   - ユーザー削除後のsubscriptions削除確認
   - ユーザー削除後のlabels削除確認
   - ユーザー削除後のpayment_histories削除確認

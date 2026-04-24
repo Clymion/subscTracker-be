@@ -77,3 +77,11 @@ class BadRequestError(Exception):
 class ForbiddenError(Exception):
     """アクセスが禁止されているリソースにアクセスしようとした場合に発生する汎用例外。"""
 
+
+class UserNotFoundError(Exception):
+    """指定されたユーザーが見つからない場合に発生する例外。"""
+
+
+class InvalidPasswordError(Exception):
+    """パスワードが正しくない場合に発生する例外。"""
+

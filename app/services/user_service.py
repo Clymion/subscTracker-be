@@ -6,8 +6,12 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.common.logging_setup import get_logger
+from app.exceptions import InvalidPasswordError, UserNotFoundError
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
+
+logger = get_logger(__name__)
 
 
 class UserService:
@@ -54,3 +58,29 @@ class UserService:
                 user.base_currency = base_currency
 
         return self.repository.save(user)
+
+    def delete_user(self, user_id: int, password: str) -> None:
+        """
+        ユーザーアカウントを削除する。
+
+        Args:
+            user_id: 削除対象のユーザーID
+            password: 確認用パスワード
+
+        Raises:
+            UserNotFoundError: ユーザーが存在しない場合
+            InvalidPasswordError: パスワードが不正な場合
+        """
+        user = self.repository.find_by_id(user_id)
+        if not user:
+            logger.warning(f"User deletion failed: user not found (user_id={user_id})")
+            raise UserNotFoundError()
+
+        if not user.check_password(password):
+            logger.warning(
+                f"User deletion failed: invalid password (user_id={user_id})"
+            )
+            raise InvalidPasswordError()
+
+        self.repository.delete(user)
+        logger.info(f"User deleted successfully (user_id={user_id})")

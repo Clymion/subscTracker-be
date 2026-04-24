@@ -15,3 +15,13 @@ class UserRepository:
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def delete(self, user: User) -> None:
+        """
+        ユーザーを削除する。
+
+        Args:
+            user: 削除対象のUserモデルインスタンス
+        """
+        self.session.delete(user)
+        self.session.commit()

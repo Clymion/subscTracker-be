@@ -1,0 +1,189 @@
+# REST Client for VSCode
+# API Integration Test Scenarios
+
+# ----------------------------------------
+# 変数定義
+# ----------------------------------------
+@host = http://localhost:5000
+# @host = https://subsc-tracker-backend-1091250272813.asia-northeast1.run.app
+
+@email = testuser1@example.com
+@password = StrongPassword123!
+@username = testuser1
+
+@accessToken =
+@refreshToken =
+@userId = 30002
+
+### 0. ログイン
+# 登録した情報でログインし、新しいトークンを取得
+# @name login
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# レスポンスからトークンを更新
+@accessToken = {{login.response.body.token}}
+@refreshToken = {{login.response.body.refresh_token}}
+
+
+# ========================================
+# 1. 通貨設定 (Currency Settings)
+# ========================================
+
+### 1.1. 通貨設定の取得
+# @name getCurrencySettings
+GET {{host}}/api/v1/users/{{userId}}/settings/currency
+Authorization: Bearer {{accessToken}}
+
+### 1.2. 通貨設定の更新
+# @name updateCurrencySettings
+PATCH {{host}}/api/v1/users/{{userId}}/settings/currency
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "base_currency": "USD",
+}
+
+
+###
+# ========================================
+# 2. ユーザー情報関連API (User Info API)
+# ========================================
+
+### 2.1. ユーザー情報の取得
+# @name getUserInfo
+GET {{host}}/api/v1/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+###
+# --------------------------------
+# 2.2. ユーザー削除
+# --------------------------------
+@delete_username = testuser2
+@delete_email = testuser2@example.com
+@delete_password = StrongPassword222!
+
+#### 2.2.1. ユーザー新規作成
+# @name register
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{delete_username}}",
+  "email": "{{delete_email}}",
+  "password": "{{delete_password}}",
+  "confirm_password": "{{delete_password}}",
+  "base_currency": "JPY"
+}
+
+###
+@delete_userId = {{register.response.body.user.id}}
+@accessToken = {{register.response.body.token}}
+
+#### 2.2.2. ユーザー削除
+# @name deleteUser
+DELETE {{host}}/api/v1/users/{{delete_userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "password": "{{delete_password}}"
+}
+
+###
+# ---------------------------------
+# 2.3. ユーザー情報更新
+# ---------------------------------
+@update_username = TestUser3
+@update_email = testuser3@example.com
+@update_password = StrongPassword333!
+
+#### 2.3.1 更新用ユーザーの作成
+# @name register
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{update_username}}",
+  "email": "{{update_email}}",
+  "password": "{{update_password}}",
+  "confirm_password": "{{update_password}}",
+  "base_currency": "USD"
+}
+
+###
+@update_userId = {{register.response.body.user.id}}
+@accessToken = {{register.response.body.token}}
+@update_username = UpdatedTestUser3
+@update_email = updateduser3@example.com
+
+#### 2.3.2 ユーザー情報更新
+# @name updateUserInfo
+PATCH {{host}}/api/v1/users/{{update_userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+{
+  "username": "{{update_username}}",
+  "email": "{{update_email}}"
+}
+
+#### 2.3.3. ユーザー削除
+# @name deleteUser
+DELETE {{host}}/api/v1/users/{{update_userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "password": "{{update_password}}"
+}
+
+###
+# ---------------------------------
+# 2.4. パスワード変更
+# ---------------------------------
+@update_username = TestUser4
+@update_email = testuser4@example.com
+@update_password = StrongPassword444!
+
+#### 2.4.1 更新用ユーザーの作成
+# @name register
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{update_username}}",
+  "email": "{{update_email}}",
+  "password": "{{update_password}}",
+  "confirm_password": "{{update_password}}",
+  "base_currency": "USD"
+}
+
+###
+@update_userId = {{register.response.body.user.id}}
+@accessToken = {{register.response.body.token}}
+@current_password = StrongPassword444!
+@new_password = StrongPassword555!
+
+#### 2.4.2 ユーザー情報更新
+# @name updateUserInfo
+POST {{host}}/api/v1/users/{{update_userId}}/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+{
+  "current_password": "{{current_password}}",
+  "new_password": "{{new_password}}"
+}
+
+#### 2.4.3. ユーザー削除
+# @name deleteUser
+DELETE {{host}}/api/v1/users/{{update_userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
