@@ -66,6 +66,10 @@ User:
     - $ref: '#/UserBasic'
     - type: object
       properties:
+        base_currency:
+          type: string
+          description: 基準通貨
+          enum: [JPY, USD, EUR, GBP]
         created_at:
           type: string
           format: date-time

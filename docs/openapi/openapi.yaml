@@ -73,10 +73,6 @@ paths:
     $ref: './paths/settings.paths.yaml#/~1exchange-rates'
   /exchange-rates/refresh:
     $ref: './paths/settings.paths.yaml#/~1exchange-rates~1refresh'
-  /users/{userId}/payment-methods:
-    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1payment-methods'
-  /users/{userId}/payment-methods/{id}:
-    $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1payment-methods~1{id}'
   /users/{userId}/notification-preferences:
     $ref: './paths/settings.paths.yaml#/~1users~1{userId}~1notification-preferences'
   /users/{userId}/notifications/push/subscribe:

@@ -502,21 +502,23 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: year
-          in: query
-          description: 年
-          schema:
-            type: integer
-        - name: month
-          in: query
-          description: 月
-          schema:
-            type: integer
         - name: subscription_id
           in: query
           description: サブスクリプションID
           schema:
             type: string
+        - name: start_date
+          in: query
+          description: 検索開始日 (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          description: 検索終了日 (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
         - name: payment_method
           in: query
           description: 支払い方法
@@ -527,18 +529,30 @@ paths:
           description: 通貨
           schema:
             type: string
-        - name: page
+        - name: limit
           in: query
-          description: ページ番号
+          description: 取得件数
           schema:
             type: integer
-            default: 1
-        - name: per_page
+            default: 100
+        - name: offset
           in: query
-          description: 1ページあたりの件数
+          description: オフセット
           schema:
             type: integer
-            default: 10
+            default: 0
+        - name: sort_by
+          in: query
+          description: ソート対象カラム
+          schema:
+            type: string
+            default: payment_date
+        - name: sort_order
+          in: query
+          description: ソート順
+          schema:
+            type: string
+            default: desc
       responses:
         '200':
           description: 正常に取得しました
@@ -725,6 +739,53 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /exchange-rates:
+    get:
+      tags:
+        - 通貨設定
+      summary: 為替レートの取得
+      description: 指定された日付と通貨の為替レートを取得します。日付を指定しない場合は最新のレートを返します。
+      operationId: getExchangeRates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: 取得する為替レートの日付 (YYYY-MM-DD)。指定しない場合は最新の日付。
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: base_currency
+          in: query
+          description: 基準とする通貨コード (3文字のISO 4217コード)。指定しない場合はユーザーの基本設定通貨。
+          required: false
+          schema:
+            type: string
+            example: JPY
+        - name: target_currencies
+          in: query
+          description: 取得したい通貨コードのカンマ区切りリスト。指定しない場合は全ての利用可能な通貨。
+          required: false
+          schema:
+            type: string
+            example: USD,EUR,KRW
+      responses:
+        '200':
+          description: 為替レートの取得に成功しました
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExchangeRate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /exchange-rates/refresh:
     post:
       tags:
@@ -760,164 +821,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /users/{userId}/payment-methods:
-    get:
-      tags:
-        - 支払い方法設定
-      summary: 支払い方法一覧の取得
-      description: 指定されたユーザーの支払い方法一覧を取得します
-      operationId: getPaymentMethods
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          description: ユーザーID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 正常に取得しました
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      payment_methods:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/PaymentMethod'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags:
-        - 支払い方法設定
-      summary: 支払い方法の追加
-      description: 指定されたユーザーに新しい支払い方法を追加します
-      operationId: createPaymentMethod
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          description: ユーザーID
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentMethodCreateRequest'
-      responses:
-        '201':
-          description: 正常に追加しました
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PaymentMethod'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /users/{userId}/payment-methods/{id}:
-    patch:
-      tags:
-        - 支払い方法設定
-      summary: 支払い方法の更新
-      description: 指定された支払い方法を更新します
-      operationId: updatePaymentMethod
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          description: ユーザーID
-          required: true
-          schema:
-            type: string
-        - name: id
-          in: path
-          description: 支払い方法ID
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                is_default:
-                  type: boolean
-                  description: デフォルトの支払い方法として設定するかどうか
-              required:
-                - is_default
-      responses:
-        '200':
-          description: 正常に更新しました
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/PaymentMethod'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags:
-        - 支払い方法設定
-      summary: 支払い方法の削除
-      description: 指定された支払い方法を削除します
-      operationId: deletePaymentMethod
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          description: ユーザーID
-          required: true
-          schema:
-            type: string
-        - name: id
-          in: path
-          description: 支払い方法ID
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: 正常に削除しました
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
   /users/{userId}/notification-preferences:
     get:
       tags:
@@ -1431,10 +1334,19 @@ components:
           type: string
           format: email
           description: メールアドレス
+        base_currency:
+          type: string
+          description: 基準通貨
+          enum:
+            - JPY
+            - USD
+            - EUR
+            - GBP
       required:
         - id
         - username
         - email
+        - base_currency
     Error:
       type: object
       properties:
@@ -1486,6 +1398,14 @@ components:
         - $ref: '#/components/schemas/UserBasic'
         - type: object
           properties:
+            base_currency:
+              type: string
+              description: 基準通貨
+              enum:
+                - JPY
+                - USD
+                - EUR
+                - GBP
             created_at:
               type: string
               format: date-time
@@ -1502,6 +1422,14 @@ components:
           type: string
           format: email
           description: メールアドレス
+        base_currency:
+          type: string
+          description: 基準通貨
+          enum:
+            - JPY
+            - USD
+            - EUR
+            - GBP
     Label:
       type: object
       properties:
@@ -1706,9 +1634,6 @@ components:
         subscription_id:
           type: string
           description: サブスクリプションID
-        subscription_name:
-          type: string
-          description: サブスクリプション名
         amount:
           type: number
           description: 支払額
@@ -1730,7 +1655,6 @@ components:
       required:
         - id
         - subscription_id
-        - subscription_name
         - amount
         - currency
         - payment_date
@@ -1799,60 +1723,32 @@ components:
         base_currency:
           type: string
           description: 基準通貨
-        auto_update:
-          type: boolean
-          description: 自動更新フラグ
-        update_frequency:
-          type: string
-          description: 更新頻度
       required:
         - base_currency
-        - auto_update
-    PaymentMethod:
+    ExchangeRate:
       type: object
       properties:
-        id:
+        date:
           type: string
-          description: 支払い方法ID
-        type:
+          format: date
+          description: 為替レートの基準日
+        base_currency:
           type: string
-          description: 支払い方法タイプ
-        card_brand:
-          type: string
-          description: カードブランド
-        last_four_digits:
-          type: string
-          description: カード番号下4桁
-        expiry_date:
-          type: string
-          description: 有効期限
-        is_default:
-          type: boolean
-          description: デフォルトフラグ
+          description: 基準通貨
+          example: JPY
+        rates:
+          type: object
+          description: 各通貨の基準通貨に対する為替レート
+          additionalProperties:
+            type: number
+            format: float
+          example:
+            USD: 0.0067
+            EUR: 0.0062
       required:
-        - id
-        - type
-        - is_default
-    PaymentMethodCreateRequest:
-      type: object
-      properties:
-        card_number:
-          type: string
-          description: カード番号
-        expiry_date:
-          type: string
-          description: 有効期限
-        security_code:
-          type: string
-          description: セキュリティコード
-        cardholder_name:
-          type: string
-          description: カード名義
-      required:
-        - card_number
-        - expiry_date
-        - security_code
-        - cardholder_name
+        - date
+        - base_currency
+        - rates
     NotificationPreferences:
       type: object
       properties:

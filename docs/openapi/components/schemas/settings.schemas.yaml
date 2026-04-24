@@ -19,60 +19,8 @@ CurrencySettingsUpdateRequest:
     base_currency:
       type: string
       description: 基準通貨
-    auto_update:
-      type: boolean
-      description: 自動更新フラグ
-    update_frequency:
-      type: string
-      description: 更新頻度
   required:
     - base_currency
-    - auto_update
-PaymentMethod:
-  type: object
-  properties:
-    id:
-      type: string
-      description: 支払い方法ID
-    type:
-      type: string
-      description: 支払い方法タイプ
-    card_brand:
-      type: string
-      description: カードブランド
-    last_four_digits:
-      type: string
-      description: カード番号下4桁
-    expiry_date:
-      type: string
-      description: 有効期限
-    is_default:
-      type: boolean
-      description: デフォルトフラグ
-  required:
-    - id
-    - type
-    - is_default
-PaymentMethodCreateRequest:
-  type: object
-  properties:
-    card_number:
-      type: string
-      description: カード番号
-    expiry_date:
-      type: string
-      description: 有効期限
-    security_code:
-      type: string
-      description: セキュリティコード
-    cardholder_name:
-      type: string
-      description: カード名義
-  required:
-    - card_number
-    - expiry_date
-    - security_code
-    - cardholder_name
 NotificationPreferences:
   type: object
   properties:
