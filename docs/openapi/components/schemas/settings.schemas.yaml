@@ -4,15 +4,8 @@ CurrencySettings:
     base_currency:
       type: string
       description: 基準通貨
-    auto_update:
-      type: boolean
-      description: 自動更新フラグ
-    update_frequency:
-      type: string
-      description: 更新頻度
   required:
     - base_currency
-    - auto_update
 CurrencySettingsUpdateRequest:
   type: object
   properties:

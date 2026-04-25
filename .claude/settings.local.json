@@ -6,7 +6,8 @@
       "Skill(kiro:validate-design)",
       "Skill(kiro:spec-impl)",
       "Skill(kiro:spec-requirements)",
-      "Skill(kiro:spec-tasks)"
+      "Skill(kiro:spec-tasks)",
+      "Skill(kiro:spec-init)"
     ]
   }
 }

@@ -11,10 +11,6 @@
 @password = StrongPassword123!
 @username = testuser1
 
-@accessToken =
-@refreshToken =
-@userId = 30002
-
 ### 0. ログイン
 # 登録した情報でログインし、新しいトークンを取得
 # @name login
@@ -29,7 +25,7 @@ Content-Type: application/json
 ###
 # レスポンスからトークンを更新
 @accessToken = {{login.response.body.token}}
-@refreshToken = {{login.response.body.refresh_token}}
+@userId = {{login.response.body.user.id}}
 
 
 # ========================================
@@ -38,8 +34,8 @@ Content-Type: application/json
 
 ### 1.1. 通貨設定の取得
 # @name getCurrencySettings
-GET {{host}}/api/v1/users/{{userId}}/settings/currency
-Authorization: Bearer {{accessToken}}
+GET {{host}}/api/v1/users/{{login.response.body.user.id}}/settings/currency
+Authorization: Bearer {{login.response.body.token}}
 
 ### 1.2. 通貨設定の更新
 # @name updateCurrencySettings

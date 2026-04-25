@@ -154,6 +154,48 @@ def delete_user(user_id: int) -> tuple[Response, int]:
         )
 
 
+@user_bp.route("/users/<int:user_id>/settings/currency", methods=["GET"])
+@jwt_required_custom
+def get_currency_settings(user_id: int) -> tuple[Response, int]:
+    """
+    ユーザーの通貨設定を取得する。
+
+    Args:
+        user_id: ユーザーID
+
+    Returns:
+        200 OK with currency settings on success
+        401 Unauthorized if JWT token is missing or expired
+        403 Forbidden if trying to access other user's settings
+        404 Not Found if user doesn't exist
+
+    Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 4.1, 4.2, 4.3
+    """
+    current_user_id = get_jwt_identity()
+
+    # ユーザーが存在するか確認
+    user = user_service.get_user_by_id(user_id)
+    if not user:
+        return (
+            jsonify({"error": {"code": 404, "message": "ユーザーが見つかりません"}}),
+            404,
+        )
+
+    # 自分の設定のみ取得可能
+    if int(current_user_id) != user_id:
+        logger.warning(
+            f"Currency settings access denied: user {current_user_id} tried to access user {user_id}"
+        )
+        return (
+            jsonify(
+                {"error": {"code": 403, "message": "他のユーザーの設定は取得できません"}},
+            ),
+            403,
+        )
+
+    return success_response({"base_currency": user.base_currency})
+
+
 @user_bp.route("/users/<int:user_id>/change-password", methods=["POST"])
 @jwt_required_custom
 def change_password(user_id: int) -> tuple[Response, int]:

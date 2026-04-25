@@ -2,6 +2,7 @@
 ユーザープロフィールAPIの統合テスト
 
 GET /api/v1/users/{userId} エンドポイントのテスト
+GET /api/v1/users/{userId}/settings/currency エンドポイントのテスト
 """
 
 from collections.abc import Generator
@@ -1337,3 +1338,126 @@ class TestChangePassword:
         clean_db.refresh(user)
         assert user.check_password("new_password456")
         assert not user.check_password("current_password123")
+
+
+@pytest.mark.api
+@pytest.mark.auth
+class TestGetCurrencySettings:
+    """GET /api/v1/users/{userId}/settings/currency エンドポイントのテスト"""
+
+    def test_get_currency_settings_success(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        正常系：認証済みユーザーが自分の通貨設定を正常に取得できることを検証
+
+        有効なJWTトークンでGET /api/v1/users/{userId}/settings/currencyを呼び出す
+        レスポンスがbase_currencyを含むことを確認
+
+        Requirements: 1.1, 2.1, 2.3, 3.1
+        """
+        # Arrange
+        user = authenticated_user["user"]
+        headers = authenticated_user["headers"]
+
+        # Act
+        response = client.get(
+            f"/api/v1/users/{user.user_id}/settings/currency", headers=headers
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert "data" in data
+        assert "base_currency" in data["data"]
+        assert data["data"]["base_currency"] == user.base_currency
+
+    def test_get_currency_settings_unauthorized(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        異常系：JWT未認証で401 Unauthorizedが返されることを検証
+
+        JWTトークンなしでGET /api/v1/users/{userId}/settings/currencyを呼び出す
+        レスポンスが401ステータスコードであることを確認
+
+        Requirements: 1.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        headers = {"Content-Type": "application/json"}
+
+        # Act
+        response = client.get(
+            f"/api/v1/users/{user.user_id}/settings/currency", headers=headers
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=401)
+
+    def test_get_currency_settings_forbidden(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        異常系：他ユーザーの設定にアクセスして403 Forbiddenが返されることを検証
+
+        ユーザーAのトークンでユーザーBの通貨設定を取得しようとする
+        レスポンスが403ステータスコードであることを確認
+
+        Requirements: 1.4, 4.2, 4.3
+        """
+        # Arrange
+        user_a = make_and_save_user(
+            clean_db,
+            username="userA",
+            email="userA@example.com",
+            password="password123",
+        )
+        user_b = make_and_save_user(
+            clean_db,
+            username="userB",
+            email="userB@example.com",
+            password="password123",
+        )
+
+        access_token = make_access_token(user_a.user_id)
+        headers = {"Content-Type": "application/json"}
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: ユーザーAのトークンでユーザーBの通貨設定を取得
+        response = client.get(
+            f"/api/v1/users/{user_b.user_id}/settings/currency", headers=headers
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=403)
+
+    def test_get_currency_settings_not_found(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        異常系：存在しないユーザーで404 Not Foundが返されることを検証
+
+        存在しないユーザーIDでGET /api/v1/users/{userId}/settings/currencyを呼び出す
+        レスポンスが404ステータスコードであることを確認
+
+        Requirements: 2.2
+        """
+        # Arrange
+        headers = authenticated_user["headers"]
+        nonexistent_user_id = 99999
+
+        # Act
+        response = client.get(
+            f"/api/v1/users/{nonexistent_user_id}/settings/currency", headers=headers
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=404)
