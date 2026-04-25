@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.common.logging_setup import get_logger
+from app.constants import ValidationConstants
 from app.exceptions import InvalidPasswordError, UserNotFoundError
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
@@ -36,6 +37,11 @@ class UserService:
         if "username" in data:
             username = data["username"].strip() if data["username"] else None
             if username:
+                # ユーザー名の長さバリデーション
+                if len(username) < ValidationConstants.USERNAME_MIN_LENGTH:
+                    raise ValueError("ユーザー名は3文字以上必要です")
+                if len(username) > ValidationConstants.USERNAME_MAX_LENGTH:
+                    raise ValueError("ユーザー名は32文字以下です")
                 user.username = username
 
         if "email" in data:

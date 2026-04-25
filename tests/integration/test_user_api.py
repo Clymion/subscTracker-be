@@ -351,6 +351,114 @@ class TestUpdateUserProfile:
         # Assert
         assert_error_response(response, expected_status=400)
 
+    def test_update_username_too_short_error(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        タスク2.5.1: ユーザー名が3文字未満で400エラーになることを検証する
+
+        ユーザー名が3文字未満で更新しようとする
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 1.2, 3.1
+        """
+        # Arrange
+        user = authenticated_user["user"]
+        headers = authenticated_user["headers"]
+        short_username = "ab"  # 2文字
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}",
+            headers=headers,
+            json={"username": short_username},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_username_too_long_error(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        タスク2.5.2: ユーザー名が32文字超過で400エラーになることを検証する
+
+        ユーザー名が32文字超過で更新しようとする
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 1.2, 3.1
+        """
+        # Arrange
+        user = authenticated_user["user"]
+        headers = authenticated_user["headers"]
+        long_username = "a" * 33  # 33文字
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}",
+            headers=headers,
+            json={"username": long_username},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_username_min_length_success(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        タスク2.5.3: ユーザー名が3文字（最小長）で更新成功することを検証する
+
+        Requirements: 1.2
+        """
+        # Arrange
+        user = authenticated_user["user"]
+        headers = authenticated_user["headers"]
+        min_username = "abc"  # 3文字
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}",
+            headers=headers,
+            json={"username": min_username},
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert data["data"]["username"] == min_username
+
+    def test_update_username_max_length_success(
+        self,
+        client: FlaskClient,
+        authenticated_user: dict,
+    ):
+        """
+        タスク2.5.4: ユーザー名が32文字（最大長）で更新成功することを検証する
+
+        Requirements: 1.2
+        """
+        # Arrange
+        user = authenticated_user["user"]
+        headers = authenticated_user["headers"]
+        max_username = "a" * 32  # 32文字
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}",
+            headers=headers,
+            json={"username": max_username},
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert data["data"]["username"] == max_username
+
     def test_update_unauthenticated_error(
         self,
         client: FlaskClient,
@@ -518,25 +626,22 @@ class TestPartialUpdate:
         assert profile["username"] == original_username
         assert profile["base_currency"] == original_currency
 
-    def test_empty_object_no_changes(
+    def test_empty_object_returns_error(
         self,
         client: FlaskClient,
         authenticated_user: dict,
     ):
         """
-        タスク3.2: 空のオブジェクトでプロフィールが変更されないことを検証する
+        タスク3.2: 空のJSONオブジェクトで400エラーになることを検証する
 
         空のJSONオブジェクト`{}`でPATCHリクエストを送信する
-        現在のプロフィール情報が変更されずに返されることを確認
+        レスポンスが400ステータスコードであることを確認
 
-        Requirements: 3.2
+        Requirements: 3.5, 4.2
         """
         # Arrange
         user = authenticated_user["user"]
         headers = authenticated_user["headers"]
-        original_username = user.username
-        original_email = user.email
-        original_currency = user.base_currency
 
         # Act: 空のJSONオブジェクトを送信
         response = client.patch(
@@ -546,11 +651,7 @@ class TestPartialUpdate:
         )
 
         # Assert
-        data = assert_success_response(response, expected_status=200)
-        profile = data["data"]
-        assert profile["username"] == original_username
-        assert profile["email"] == original_email
-        assert profile["base_currency"] == original_currency
+        assert_error_response(response, expected_status=400)
 
 
 @pytest.mark.api

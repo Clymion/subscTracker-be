@@ -4,7 +4,9 @@
       "Bash(python -m pytest tests/unit/test_subscription_model.py::TestSubscriptionModelCreation -v --tb=short)",
       "Skill(kiro:spec-design)",
       "Skill(kiro:validate-design)",
-      "Skill(kiro:spec-impl)"
+      "Skill(kiro:spec-impl)",
+      "Skill(kiro:spec-requirements)",
+      "Skill(kiro:spec-tasks)"
     ]
   }
 }

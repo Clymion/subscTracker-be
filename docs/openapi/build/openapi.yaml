@@ -27,8 +27,6 @@ tags:
     description: ユーザープロフィール設定関連のAPI
   - name: 通貨設定
     description: 通貨・為替レート設定関連のAPI
-  - name: 支払い方法設定
-    description: 支払い方法設定関連のAPI
   - name: 通知設定
     description: 通知設定関連のAPI
   - name: ラベル管理

@@ -130,9 +130,11 @@ Content-Type: application/json
 PATCH {{host}}/api/v1/users/{{update_userId}}
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
+
 {
   "username": "{{update_username}}",
-  "email": "{{update_email}}"
+  "email": "{{update_email}}",
+  "base_currency": "JPY"
 }
 
 #### 2.3.3. ユーザー削除

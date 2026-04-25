@@ -71,6 +71,10 @@ def update_user(user_id: int) -> tuple[Response, int]:
     if data is None:
         return jsonify({"error": {"code": 400, "message": "Invalid JSON"}}), 400
 
+    # 空のJSONオブジェクトの検証
+    if not data:
+        return jsonify({"error": {"code": 400, "message": "更新するフィールドがありません"}}), 400
+
     try:
         user = user_service.update_user(user_id, data)
     except ValueError as e:

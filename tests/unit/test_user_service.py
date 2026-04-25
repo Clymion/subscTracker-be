@@ -136,3 +136,83 @@ class TestUserServiceDeleteUser:
         # Act & Assert
         with pytest.raises(Exception, match="Database error"):
             user_service.delete_user(user_id=1, password="correct_password123")
+
+
+class TestUserServiceUpdateUserValidation:
+    """UserService.update_userのユーザー名バリデーションテスト"""
+
+    def test_update_user_username_too_short(
+        self, user_service, mock_repository, sample_user
+    ):
+        """
+        異常系: ユーザー名が3文字未満の場合にバリデーションエラー
+
+        ユーザー名が3文字未満の場合、ValueErrorが発生することを確認
+        Requirements: 1.2, 3.1
+        """
+        # Arrange
+        mock_repository.find_by_id.return_value = sample_user
+        short_username = "ab"  # 2文字
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="ユーザー名は3文字以上必要です"):
+            user_service.update_user(user_id=1, data={"username": short_username})
+
+    def test_update_user_username_too_long(
+        self, user_service, mock_repository, sample_user
+    ):
+        """
+        異常系: ユーザー名が32文字超過の場合にバリデーションエラー
+
+        ユーザー名が32文字超過の場合、ValueErrorが発生することを確認
+        Requirements: 1.2, 3.1
+        """
+        # Arrange
+        mock_repository.find_by_id.return_value = sample_user
+        long_username = "a" * 33  # 33文字
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="ユーザー名は32文字以下です"):
+            user_service.update_user(user_id=1, data={"username": long_username})
+
+    def test_update_user_username_min_length_valid(
+        self, user_service, mock_repository, sample_user
+    ):
+        """
+        正常系: ユーザー名が3文字（最小長）の場合に更新成功
+
+        ユーザー名が3文字の場合、正常に更新されることを確認
+        Requirements: 1.2
+        """
+        # Arrange
+        mock_repository.find_by_id.return_value = sample_user
+        mock_repository.save.return_value = sample_user
+        min_username = "abc"  # 3文字
+
+        # Act
+        result = user_service.update_user(user_id=1, data={"username": min_username})
+
+        # Assert
+        assert result.username == min_username
+        mock_repository.save.assert_called_once_with(sample_user)
+
+    def test_update_user_username_max_length_valid(
+        self, user_service, mock_repository, sample_user
+    ):
+        """
+        正常系: ユーザー名が32文字（最大長）の場合に更新成功
+
+        ユーザー名が32文字の場合、正常に更新されることを確認
+        Requirements: 1.2
+        """
+        # Arrange
+        mock_repository.find_by_id.return_value = sample_user
+        mock_repository.save.return_value = sample_user
+        max_username = "a" * 32  # 32文字
+
+        # Act
+        result = user_service.update_user(user_id=1, data={"username": max_username})
+
+        # Assert
+        assert result.username == max_username
+        mock_repository.save.assert_called_once_with(sample_user)
