@@ -196,6 +196,91 @@ def get_currency_settings(user_id: int) -> tuple[Response, int]:
     return success_response({"base_currency": user.base_currency})
 
 
+@user_bp.route("/users/<int:user_id>/settings/currency", methods=["PATCH"])
+@jwt_required_custom
+def update_currency_settings(user_id: int) -> tuple[Response, int]:
+    """
+    ユーザーの通貨設定を更新する。
+
+    Args:
+        user_id: ユーザーID
+
+    Returns:
+        200 OK with updated currency settings on success
+        400 Bad Request for validation errors
+        401 Unauthorized if JWT token is missing or expired
+        403 Forbidden if trying to update other user's settings
+        404 Not Found if user doesn't exist
+
+    Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 4.1, 4.2, 5.1, 5.2, 5.3, 6.1, 6.2
+    """
+    from app.constants import CurrencyConstants
+
+    current_user_id = get_jwt_identity()
+
+    # 自分の設定のみ更新可能
+    if int(current_user_id) != user_id:
+        logger.warning(
+            f"Currency settings update denied: user {current_user_id} tried to update user {user_id}"
+        )
+        return (
+            jsonify(
+                {"error": {"code": 403, "message": "他のユーザーの設定は更新できません"}},
+            ),
+            403,
+        )
+
+    # JSONリクエストボディの取得
+    data = request.get_json()
+    if data is None:
+        return (
+            jsonify({"error": {"code": 400, "message": "Invalid JSON"}}),
+            400,
+        )
+
+    # base_currencyフィールドの存在確認
+    if "base_currency" not in data:
+        return (
+            jsonify({"error": {"code": 400, "message": "base_currencyは必須です"}}),
+            400,
+        )
+
+    base_currency = data.get("base_currency")
+
+    # 空文字チェック
+    if not base_currency:
+        return (
+            jsonify({"error": {"code": 400, "message": "base_currencyは空にできません"}}),
+            400,
+        )
+
+    # 通貨コードのバリデーション
+    if not CurrencyConstants.is_valid(base_currency):
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": 400,
+                        "message": f"無効な通貨コードです。サポート対象: {', '.join(CurrencyConstants.all())}",
+                    }
+                }
+            ),
+            400,
+        )
+
+    try:
+        user = user_service.update_user(user_id, {"base_currency": base_currency})
+    except ValueError as e:
+        if "ユーザーが見つかりません" in str(e):
+            return (
+                jsonify({"error": {"code": 404, "message": "ユーザーが見つかりません"}}),
+                404,
+            )
+        return jsonify({"error": {"code": 400, "message": str(e)}}), 400
+
+    return success_response({"base_currency": user.base_currency})
+
+
 @user_bp.route("/users/<int:user_id>/change-password", methods=["POST"])
 @jwt_required_custom
 def change_password(user_id: int) -> tuple[Response, int]:

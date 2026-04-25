@@ -40,11 +40,11 @@ Authorization: Bearer {{login.response.body.token}}
 ### 1.2. 通貨設定の更新
 # @name updateCurrencySettings
 PATCH {{host}}/api/v1/users/{{userId}}/settings/currency
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
-  "base_currency": "USD",
+  "base_currency": "CNY"
 }
 
 

@@ -1461,3 +1461,355 @@ class TestGetCurrencySettings:
 
         # Assert
         assert_error_response(response, expected_status=404)
+
+
+@pytest.mark.api
+@pytest.mark.auth
+class TestUpdateCurrencySettings:
+    """PATCH /api/v1/users/{userId}/settings/currency エンドポイントのテスト"""
+
+    def test_update_currency_settings_usd_success(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク1: 正常系 USD通貨コードで更新成功
+
+        有効なUSD通貨コードでPATCH /api/v1/users/{userId}/settings/currencyを呼び出す
+        レスポンスが200ステータスコードで、更新後のbase_currencyが返されることを確認
+
+        Requirements: 1.1, 3.1, 3.3, 4.1, 6.2
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            username="usduser",
+            email="usduser@example.com",
+            password="password123",
+            base_currency="JPY",  # 初期値はJPY
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "USD"},
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert "data" in data
+        assert data["data"]["base_currency"] == "USD"
+
+    def test_update_currency_settings_jpy_success(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク1: 正常系 JPY通貨コードで更新成功
+
+        有効なJPY通貨コードでPATCH /api/v1/users/{userId}/settings/currencyを呼び出す
+        レスポンスが200ステータスコードで、更新後のbase_currencyが返されることを確認
+
+        Requirements: 1.1, 3.1, 3.3, 4.1, 6.1
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            username="jpyuser",
+            email="jpyuser@example.com",
+            password="password123",
+            base_currency="USD",  # 初期値はUSD
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "JPY"},
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert "data" in data
+        assert data["data"]["base_currency"] == "JPY"
+
+    def test_update_currency_settings_invalid_json(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3: 異常系 JSON形式不正で400エラー
+
+        不正なJSON形式でPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.1, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: 不正なJSON形式
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            data="invalid json{",
+            content_type="application/json",
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_missing_base_currency(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク4: 異常系 base_currencyフィールド欠落で400エラー
+
+        base_currencyフィールドなしでPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.2, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: base_currencyフィールドなし
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_empty_currency(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク5: 異常系 空文字の通貨コードで400エラー
+
+        base_currencyが空文字でPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.3, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: 空文字の通貨コード
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": ""},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_invalid_currency_eur(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク6: 異常系 EUR（サポート対象外）で400エラー
+
+        サポートされていないEUR通貨コードでPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.4, 2.5, 6.1, 6.2, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: サポート対象外のEUR
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "EUR"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_invalid_currency_gbp(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク6: 異常系 GBP（サポート対象外）で400エラー
+
+        サポートされていないGBP通貨コードでPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.4, 2.5, 6.1, 6.2, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: サポート対象外のGBP
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "GBP"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_invalid_currency_xyz(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク6: 異常系 XYZ（無効な通貨コード）で400エラー
+
+        無効なXYZ通貨コードでPATCHリクエストを送信
+        レスポンスが400ステータスコードであることを確認
+
+        Requirements: 2.4, 2.5, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: 無効なXYZ
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "XYZ"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_update_currency_settings_unauthorized(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク7: 異常系 JWT未認証で401エラー
+
+        JWTトークンなしでPATCHリクエストを送信
+        レスポンスが401ステータスコードであることを確認
+
+        Requirements: 1.2, 1.3, 5.1, 4.2
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        headers = {"Content-Type": "application/json"}
+
+        # Act: JWTトークンなし
+        response = client.patch(
+            f"/api/v1/users/{user.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "USD"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=401)
+
+    def test_update_currency_settings_forbidden(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク8: 異常系 他ユーザーの設定更新で403エラー
+
+        ユーザーAのトークンでユーザーBの通貨設定を更新しようとする
+        レスポンスが403ステータスコードであることを確認
+
+        Requirements: 1.4, 5.2, 5.3, 4.2
+        """
+        # Arrange
+        user_a = make_and_save_user(
+            clean_db,
+            username="userA",
+            email="userA@example.com",
+            password="password123",
+        )
+        user_b = make_and_save_user(
+            clean_db,
+            username="userB",
+            email="userB@example.com",
+            password="password123",
+        )
+
+        access_token = make_access_token(user_a.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: ユーザーAのトークンでユーザーBの設定を更新
+        response = client.patch(
+            f"/api/v1/users/{user_b.user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "USD"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=403)
+
+    def test_update_currency_settings_not_found(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク9: 異常系 存在しないユーザーで404エラー
+
+        存在しないユーザーIDでPATCHリクエストを送信
+        レスポンスが404ステータスコードであることを確認
+
+        Requirements: 3.2, 4.2
+        """
+        # Arrange
+        nonexistent_user_id = 99999
+        access_token = make_access_token(nonexistent_user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: 存在しないユーザーID
+        response = client.patch(
+            f"/api/v1/users/{nonexistent_user_id}/settings/currency",
+            headers=headers,
+            json={"base_currency": "USD"},
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=404)
