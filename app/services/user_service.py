@@ -90,3 +90,54 @@ class UserService:
 
         self.repository.delete(user)
         logger.info(f"User deleted successfully (user_id={user_id})")
+
+    def change_password(
+        self, user_id: int, current_password: str, new_password: str
+    ) -> None:
+        """
+        ユーザーのパスワードを変更する。
+
+        Args:
+            user_id: ユーザーID
+            current_password: 現在のパスワード
+            new_password: 新しいパスワード
+
+        Raises:
+            UserNotFoundError: ユーザーが存在しない場合
+            InvalidPasswordError: 現在のパスワードが正しくない場合
+            ValueError: 新しいパスワードがバリデーションを通過しない場合
+        """
+        # ユーザー存在確認
+        user = self.repository.find_by_id(user_id)
+        if not user:
+            logger.warning(
+                f"Password change failed: user not found (user_id={user_id})"
+            )
+            raise UserNotFoundError()
+
+        # 現在のパスワード検証
+        if not user.check_password(current_password):
+            logger.warning(
+                f"Password change failed: invalid current password (user_id={user_id})"
+            )
+            raise InvalidPasswordError()
+
+        # 新しいパスワードのバリデーション
+        if not new_password:
+            logger.warning(
+                f"Password change failed: empty new password (user_id={user_id})"
+            )
+            raise ValueError("新しいパスワードが必要です")
+
+        if len(new_password) < ValidationConstants.PASSWORD_MIN_LENGTH:
+            logger.warning(
+                f"Password change failed: new password too short (user_id={user_id})"
+            )
+            raise ValueError(
+                f"パスワードは{ValidationConstants.PASSWORD_MIN_LENGTH}文字以上必要です"
+            )
+
+        # パスワードのハッシュ化と保存
+        user.set_password(new_password)
+        self.repository.save(user)
+        logger.info(f"Password changed successfully (user_id={user_id})")

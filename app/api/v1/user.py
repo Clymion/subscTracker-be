@@ -152,3 +152,96 @@ def delete_user(user_id: int) -> tuple[Response, int]:
             jsonify({"error": {"code": 500, "message": "Internal server error"}}),
             500,
         )
+
+
+@user_bp.route("/users/<int:user_id>/change-password", methods=["POST"])
+@jwt_required_custom
+def change_password(user_id: int) -> tuple[Response, int]:
+    """
+    ユーザーのパスワードを変更する。
+
+    Args:
+        user_id: パスワード変更対象のユーザーID
+
+    Returns:
+        200 OK on success
+        400 Bad Request for validation errors
+        401 Unauthorized for authentication errors
+        403 Forbidden for authorization errors
+        404 Not Found if user doesn't exist
+        500 Internal Server Error for unexpected errors
+    """
+    current_user_id = get_jwt_identity()
+
+    # 自分のパスワードのみ変更可能
+    if int(current_user_id) != user_id:
+        logger.warning(
+            f"Password change denied: user {current_user_id} tried to change user {user_id}"
+        )
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": 403,
+                        "message": "他のユーザーのパスワードは変更できません",
+                    }
+                }
+            ),
+            403,
+        )
+
+    data = request.get_json()
+    if data is None:
+        return (
+            jsonify({"error": {"code": 400, "message": "Invalid JSON"}}),
+            400,
+        )
+
+    # 必須フィールドのバリデーション
+    if "current_password" not in data or not data["current_password"]:
+        return (
+            jsonify(
+                {"error": {"code": 400, "message": "現在のパスワードが必要です"}}
+            ),
+            400,
+        )
+
+    if "new_password" not in data or not data["new_password"]:
+        return (
+            jsonify(
+                {"error": {"code": 400, "message": "新しいパスワードが必要です"}}
+            ),
+            400,
+        )
+
+    current_password = data["current_password"]
+    new_password = data["new_password"]
+
+    try:
+        user_service.change_password(user_id, current_password, new_password)
+        return success_response({"message": "パスワードが正常に変更されました"})
+    except UserNotFoundError:
+        return (
+            jsonify({"error": {"code": 404, "message": "ユーザーが見つかりません"}}),
+            404,
+        )
+    except InvalidPasswordError:
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": 400,
+                        "message": "現在のパスワードが正しくありません",
+                    }
+                }
+            ),
+            400,
+        )
+    except ValueError as e:
+        return jsonify({"error": {"code": 400, "message": str(e)}}), 400
+    except Exception as e:
+        logger.exception(f"Unexpected error during password change: {e}")
+        return (
+            jsonify({"error": {"code": 500, "message": "Internal server error"}}),
+            500,
+        )

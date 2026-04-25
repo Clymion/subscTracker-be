@@ -1020,3 +1020,320 @@ class TestDeleteUserCascade:
             user_id=user.user_id
         ).all()
         assert len(remaining_histories) == 0
+
+
+@pytest.mark.api
+@pytest.mark.auth
+class TestChangePassword:
+    """POST /api/v1/users/{userId}/change-password エンドポイントのテスト"""
+
+    def test_change_password_success(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: 正常系 パスワード変更成功
+
+        有効なJWTトークンと正しい現在のパスワードでパスワード変更が成功することを確認
+        Requirements: 1.1, 1.2, 2.1, 3.5, 6.1, 6.2
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            username="changepass",
+            email="changepass@example.com",
+            password="current_password123",
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "current_password123",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        data = assert_success_response(response, expected_status=200)
+        assert "data" in data
+        assert "message" in data["data"]
+
+    def test_change_password_unauthorized(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: 認証エラー 401 Unauthorized
+
+        JWTトークンなしでパスワード変更リクエストを送信
+        レスポンスが401ステータスコードであることを確認
+        Requirements: 4.1
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        headers = {"Content-Type": "application/json"}
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "any_password",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=401)
+
+    def test_change_password_other_user_forbidden(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: 認可エラー 403 Forbidden
+
+        ユーザーAのトークンでユーザーBのパスワード変更を試みる
+        レスポンスが403ステータスコードであることを確認
+        Requirements: 4.2, 4.3
+        """
+        # Arrange
+        user_a = make_and_save_user(
+            clean_db,
+            username="userA",
+            email="userA@example.com",
+            password="password123",
+        )
+        user_b = make_and_save_user(
+            clean_db,
+            username="userB",
+            email="userB@example.com",
+            password="password123",
+        )
+
+        access_token = make_access_token(user_a.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act: ユーザーAのトークンでユーザーBのパスワードを変更
+        response = client.post(
+            f"/api/v1/users/{user_b.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "password123",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=403)
+
+    def test_change_password_missing_current_password(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: バリデーションエラー 400 Bad Request (current_password未指定)
+
+        現在のパスワードなしでパスワード変更リクエストを送信
+        レスポンスが400ステータスコードであることを確認
+        Requirements: 2.1, 2.3
+        """
+        # Arrange
+        user = make_and_save_user(clean_db)
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_change_password_missing_new_password(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: バリデーションエラー 400 Bad Request (new_password未指定)
+
+        新しいパスワードなしでパスワード変更リクエストを送信
+        レスポンスが400ステータスコードであることを確認
+        Requirements: 3.1, 3.3
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            password="current_password123",
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "current_password123",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_change_password_new_password_too_short(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: バリデーションエラー 400 Bad Request (new_passwordが8文字未満)
+
+        新しいパスワードが8文字未満でパスワード変更リクエストを送信
+        レスポンスが400ステータスコードであることを確認
+        Requirements: 3.2
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            password="current_password123",
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "current_password123",
+                "new_password": "short1",  # 6文字
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_change_password_invalid_current_password(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: バリデーションエラー 400 Bad Request (現在のパスワード不一致)
+
+        間違った現在のパスワードでパスワード変更リクエストを送信
+        レスポンスが400ステータスコードであることを確認
+        Requirements: 2.2
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            password="current_password123",
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "wrong_password",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=400)
+
+    def test_change_password_user_not_found(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: 存在エラー 404 Not Found
+
+        存在しないユーザーIDでパスワード変更リクエストを送信
+        レスポンスが404ステータスコードであることを確認
+        Requirements: 1.3
+        """
+        # Arrange
+        nonexistent_user_id = 99999
+        access_token = make_access_token(nonexistent_user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{nonexistent_user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "any_password",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_error_response(response, expected_status=404)
+
+    def test_change_password_database_updated(
+        self,
+        client: FlaskClient,
+        clean_db: Generator[Session, None, None],
+    ):
+        """
+        タスク3.1: データベースでパスワードが正しく更新されることを検証
+
+        パスワード変更後、新しいパスワードで認証できることを確認
+        Requirements: 3.5
+        """
+        # Arrange
+        user = make_and_save_user(
+            clean_db,
+            username="dbupdate",
+            email="dbupdate@example.com",
+            password="current_password123",
+        )
+        access_token = make_access_token(user.user_id)
+        headers = make_api_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # Act
+        response = client.post(
+            f"/api/v1/users/{user.user_id}/change-password",
+            headers=headers,
+            json={
+                "current_password": "current_password123",
+                "new_password": "new_password456",
+            },
+        )
+
+        # Assert
+        assert_success_response(response, expected_status=200)
+
+        # データベースからユーザーを再取得してパスワードが更新されているか確認
+        clean_db.refresh(user)
+        assert user.check_password("new_password456")
+        assert not user.check_password("current_password123")

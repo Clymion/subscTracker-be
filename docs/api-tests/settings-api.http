@@ -174,18 +174,36 @@ Content-Type: application/json
 @current_password = StrongPassword444!
 @new_password = StrongPassword555!
 
-#### 2.4.2 ユーザー情報更新
-# @name updateUserInfo
+#### 2.4.2 ユーザーパスワード変更
+# @name changePassword
 POST {{host}}/api/v1/users/{{update_userId}}/change-password
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
+
 {
   "current_password": "{{current_password}}",
   "new_password": "{{new_password}}"
 }
 
-#### 2.4.3. ユーザー削除
+#### 2.4.3 新しいパスワードでログイン
+# @name loginWithNewPassword
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{update_email}}",
+  "password": "{{new_password}}"
+}
+
+###
+@accessToken = {{loginWithNewPassword.response.body.token}}
+
+#### 2.4.4. ユーザー削除
 # @name deleteUser
 DELETE {{host}}/api/v1/users/{{update_userId}}
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
+
+{
+  "password": "{{new_password}}"
+}
