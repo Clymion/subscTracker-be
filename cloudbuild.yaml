@@ -29,8 +29,35 @@ steps:
       - '--platform=managed'
       - '--min-instances=0'
       - '--allow-unauthenticated'
-      # Secret Managerから秘密鍵を環境変数としてセットする
+      # 環境変数を設定
+      - '--set-env-vars=DB_DRIVER=mysql,DB_SSL_CA=/etc/ssl/certs/tidb_ca.crt'
+      # Secret Managerから秘密情報を環境変数としてセットする
       - '--set-secrets=JWT_SECRET_KEY=JWT_SECRET_KEY:latest'
+      - '--set-secrets=DB_HOST=DB_HOST:latest'
+      - '--set-secrets=DB_PORT=DB_PORT:latest'
+      - '--set-secrets=DB_USER=DB_USER:latest'
+      - '--set-secrets=DB_PASSWORD=DB_PASSWORD:latest'
+      - '--set-secrets=DB_NAME=DB_NAME:latest'
+
+  # ステップ4: Cloud Run Job を更新（為替レート取得バッチ）
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'jobs'
+      - 'update'
+      - 'subsc-tracker-fetch-rate'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPO_NAME}/${_IMAGE_NAME}:$COMMIT_SHA'
+      - '--region=${_REGION}'
+      - '--task-timeout=300s'
+      - '--set-env-vars=DB_DRIVER=mysql,DB_SSL_CA=/etc/ssl/certs/tidb_ca.crt'
+      - '--set-secrets=JWT_SECRET_KEY=JWT_SECRET_KEY:latest'
+      - '--set-secrets=EXCHANGERATE_API_KEY=EXCHANGERATE_API_KEY:latest'
+      - '--set-secrets=DB_HOST=DB_HOST:latest'
+      - '--set-secrets=DB_PORT=DB_PORT:latest'
+      - '--set-secrets=DB_USER=DB_USER:latest'
+      - '--set-secrets=DB_PASSWORD=DB_PASSWORD:latest'
+      - '--set-secrets=DB_NAME=DB_NAME:latest'
 
 # ビルドしたイメージを保存しておく設定
 images:

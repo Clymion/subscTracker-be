@@ -63,10 +63,23 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Get configuration section
+    configuration = config.get_section(config.config_ini_section, {})
+
+    # Add SSL connect args if specified (for TiDB Cloud)
+    ssl_ca = os.getenv("DB_SSL_CA")
+    if ssl_ca:
+        connect_args = {
+            "ssl_verify_cert": True,
+            "ssl_verify_identity": True,
+            "ssl_ca": ssl_ca,
+        }
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args if ssl_ca else {},
     )
 
     with connectable.connect() as connection:

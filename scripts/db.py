@@ -190,6 +190,17 @@ def _connect_mysql(cfg: Any) -> Any:
         )
         raise ImportError(msg) from exc
 
+    # SSL configuration for TiDB Cloud
+    ssl_params = {}
+    if getattr(cfg, "DB_SSL_ENABLED", True):
+        ssl_ca = getattr(cfg, "DB_SSL_CA", None)
+        if ssl_ca:
+            ssl_params = {
+                "ssl_ca": ssl_ca,
+                "ssl_verify_cert": True,
+                "ssl_verify_identity": True,
+            }
+
     conn = pymysql.connect(
         host=cfg.DB_HOST,
         port=cfg.DB_PORT or 4000,
@@ -198,11 +209,13 @@ def _connect_mysql(cfg: Any) -> Any:
         database=cfg.DB_NAME,
         charset="utf8mb4",
         autocommit=False,
+        **ssl_params,
     )
     logger.info(
-        "TiDB/MySQL に接続しました: %s:%s/%s",
+        "TiDB/MySQL に接続しました: %s:%s/%s (SSL: %s)",
         cfg.DB_HOST,
         cfg.DB_PORT,
         cfg.DB_NAME,
+        bool(ssl_params),
     )
     return conn

@@ -1,0 +1,38 @@
+# Environment files
+.env
+*.env
+.env.*
+
+# Credentials
+credentials/
+!credentials/tidb_ca.crt
+
+# Git
+.git
+.gitignore
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Docker
+docker-compose*.yml
+Dockerfile
+
+# Dev files
+.kiro/
+.claude/
+tmp/
+*.md
+LICENSE
+repomix-output.xml

@@ -1,25 +1,32 @@
 **為替レート CSV インポート**
 
-- **目的**: CSV ファイルから過去の為替レートをローカルの `exchange_rates` テーブルへインポートします。必要に応じて同通貨の合成レート（rate=1.0）も作成し、支払履歴登録時の親レコード欠損による FOREIGN KEY エラーを防ぎます。
+- **目的**: CSV ファイルから過去の為替レートをローカルの `exchange_rates` テーブルへインポートします。1つのファイルに複数の通貨ペアが含まれていても対応可能です。必要に応じて同通貨の合成レート（rate=1.0）も作成し、支払履歴登録時の親レコード欠損による FOREIGN KEY エラーを防ぎます。
 - **スクリプト**: `scripts/import_exchange_rates_from_csv.py`
-- **データ取得元**: https://www.dukascopy.com/swiss/english/marketwatch/historical/
+- **データ取得元**: https://www.tfx.co.jp/historical/fx/
+
+**前準備**
+1. ファイルエンコードをsjisからutf-8に変換する
+2. 中国人民元の`CNH`は`CNY`に、csvファイル内で置換する
+3. 最初の2行を削除する
 
 使用例:
 
-```
-# ファイル名に通貨ペアが含まれている場合 (例: USD-JPY_...)
-poetry run python scripts/import_exchange_rates_from_csv.py --file /path/to/USD-JPY_Day_2025-06-01_to_2025-11-23_UTC.csv
+```bash
+# ファイル内の全通貨ペアをインポート
+poetry run python scripts/import_exchange_rates_from_csv.py --file tmp/fx_result.csv
 
-# ファイル名に通貨ペアが含まれていない場合は明示的に指定:
-poetry run python scripts/import_exchange_rates_from_csv.py --file /path/to/file.csv --from-to USD-JPY
+# 特定の通貨ペアのみインポート
+poetry run python scripts/import_exchange_rates_from_csv.py --file tmp/fx_result.csv --from-to USD-JPY
 
-# 同通貨の合成レートを作成したくない場合:
-poetry run python scripts/import_exchange_rates_from_csv.py --file /path/to/USD-JPY.csv --no-synthetic
+# 同通貨の合成レートを作成したくない場合
+poetry run python scripts/import_exchange_rates_from_csv.py --file tmp/fx_result.csv --no-synthetic
 ```
 
 - **CSV の想定フォーマット**:
-  - ヘッダ: `UTC,Open,High,Low,Close,Volume`（`Close` 列をレートとして使用します）
-  - タイムスタンプ形式: `DD.MM.YYYY HH:MM:SS UTC`（例: `01.06.2025 00:00:00 UTC`）
+  - ヘッダ: `商品名,商品タイプ,取引日,当日清算価格`
+  - 1つのファイルに複数通貨ペアが混在可能（例: USD/JPY, EUR/JPY, CNH/JPY）
+  - 日付形式: `YYYY/MM/DD`（例: `2026/03/23`）
+  - レート: `当日清算価格` 列を使用
 
 - **注意点 / 補足**:
   - 本スクリプトは `exchange_rates` テーブルに対して UPSERT（ON CONFLICT DO UPDATE）で挿入・更新を行います。

@@ -9,13 +9,12 @@ import argparse
 import datetime
 import logging
 import os
-import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
 
 import requests
-from dotenv import load_dotenv
+from db import build_upsert_sql, get_db_connection
 from google.api_core import exceptions
 from google.cloud import secretmanager
 
@@ -27,11 +26,6 @@ logging.basicConfig(
 )
 
 # --- 定数定義 ---
-# プロジェクトのルートディレクトリ
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# 開発環境のデータベースパス
-DB_PATH = PROJECT_ROOT / "instance" / "app.db"
-
 # 為替レート取得API
 API_URL_LATEST_TEMPLATE = "https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
 API_URL_HISTORY_TEMPLATE = "https://v6.exchangerate-api.com/v6/{api_key}/history/{base_currency}/{year}/{month}/{day}"
@@ -43,11 +37,22 @@ EXCHANGE_RATE_SOURCE = "exchangerate-api.com"
 REQUEST_TIMEOUT = 15
 
 # Google Cloud関連
-logging.info(PROJECT_ROOT)
-SERVICE_ACCOUNT_FILE = PROJECT_ROOT / "service_account_key.json"
+SERVICE_ACCOUNT_FILE = Path("service_account_key.json")
 GCP_PROJECT_ID = "subscmanager"
 SECRET_ID_EXCHANGERATE_API_KEY = "EXCHANGERATE_API_KEY"  # noqa: S105
 VERSION = "1"
+
+# UPSERT用カラム定義
+_EXCHANGE_RATE_COLUMNS = [
+    "from_currency",
+    "to_currency",
+    "rate",
+    "source",
+    "date",
+    "created_at",
+    "updated_at",
+]
+_EXCHANGE_RATE_CONFLICT_KEYS = ["from_currency", "to_currency", "date"]
 
 
 def get_api_key() -> str | None:
@@ -97,19 +102,6 @@ def get_api_key() -> str | None:
     except exceptions.GoogleAPICallError:
         logging.exception("Secret ManagerからのAPIキー取得に失敗しました。")
         return None
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """データベース接続を取得します."""
-    # 本番環境ではGCS上のファイルパスが環境変数経由で渡されることを想定
-    db_path_str = os.environ.get("DATABASE_URL", str(DB_PATH))
-    try:
-        conn = sqlite3.connect(db_path_str)
-        conn.row_factory = sqlite3.Row
-    except sqlite3.Error:
-        logging.exception("データベース接続エラー")
-        sys.exit(1)
-    return conn
 
 
 def fetch_exchange_rates(
@@ -201,7 +193,8 @@ def fetch_exchange_rates(
 
 
 def insert_rates_to_db(
-    conn: sqlite3.Connection,
+    conn: Any,
+    driver: str,
     rates_data: dict[str, Any],
 ) -> None:
     """
@@ -211,6 +204,7 @@ def insert_rates_to_db(
 
     Args:
         conn: データベース接続オブジェクト
+        driver: "sqlite" または "mysql"
         rates_data: APIから取得した為替レートデータ
     """
     cursor = conn.cursor()
@@ -233,17 +227,12 @@ def insert_rates_to_db(
         logging.info("挿入するレートがありませんでした。(Base: %s)", base)
         return
 
-    # 同じ日、同じ通貨ペアが重複した場合は更新する
-    sql = """
-        INSERT INTO EXCHANGE_RATES (
-            from_currency, to_currency, rate, source, date,
-            created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(from_currency, to_currency, date) DO UPDATE SET
-            rate = excluded.rate,
-            source = excluded.source,
-            updated_at = excluded.updated_at
-    """
+    sql = build_upsert_sql(
+        driver,
+        table="exchange_rates",
+        columns=_EXCHANGE_RATE_COLUMNS,
+        conflict_keys=_EXCHANGE_RATE_CONFLICT_KEYS,
+    )
     try:
         cursor.executemany(sql, rates_to_insert)
         conn.commit()
@@ -252,7 +241,7 @@ def insert_rates_to_db(
             len(rates_to_insert),
             base,
         )
-    except sqlite3.Error:
+    except Exception:
         logging.exception("データベース挿入エラー")
         conn.rollback()
         sys.exit(1)
@@ -295,23 +284,22 @@ def main() -> None:
     )
 
     # 3. データベースに接続
-    conn = get_db_connection()
-    logging.info("データベースに接続しました。")
+    try:
+        conn, driver = get_db_connection()
+    except Exception:
+        logging.exception("データベース接続に失敗しました")
+        sys.exit(1)
+    logging.info("データベースに接続しました。(driver=%s)", driver)
 
     # 4. 取得したレートをDBに保存
-    for rates_data in all_rates_data:
-        insert_rates_to_db(conn, rates_data)
+    try:
+        for rates_data in all_rates_data:
+            insert_rates_to_db(conn, driver, rates_data)
+    finally:
+        conn.close()
 
-    # 5. 接続を閉じる
-    conn.close()
     logging.info("処理が完了しました。")
 
 
 if __name__ == "__main__":
-    # .envファイルから環境変数を読み込む
-    load_dotenv()
-
-    # sys.pathにプロジェクトルートを追加して、appモジュールをインポート可能にする
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
     main()

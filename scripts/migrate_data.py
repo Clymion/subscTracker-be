@@ -612,6 +612,10 @@ def main() -> None:
         default=BATCH_SIZE,
         help=f"Batch size for data transfer (default: {BATCH_SIZE})",
     )
+    parser.add_argument(
+        "--ssl-ca",
+        help="Path to CA certificate file for SSL connection to TiDB Cloud",
+    )
 
     args = parser.parse_args()
 
@@ -621,7 +625,20 @@ def main() -> None:
         source_url = f"sqlite:///{source_url}"
 
     source_engine = create_engine(source_url)
-    dest_engine = create_engine(args.dest)
+
+    # Create destination engine with SSL support
+    dest_connect_args = {}
+    if args.ssl_ca:
+        dest_connect_args = {
+            "ssl_ca": args.ssl_ca,
+            "ssl_verify_cert": True,
+        }
+        logger.info(f"Using SSL CA certificate: {args.ssl_ca}")
+
+    dest_engine = create_engine(
+        args.dest,
+        connect_args=dest_connect_args if dest_connect_args else None,
+    )
 
     # Run migration
     checkpoint_file = Path(args.checkpoint)

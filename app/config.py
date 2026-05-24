@@ -41,6 +41,14 @@ class AppConfig(BaseSettings):
     DB_USER: str | None = Field(default=None, description="Database user")
     DB_PASSWORD: str | None = Field(default=None, description="Database password")
 
+    # SSL/TLS settings for TiDB Cloud
+    DB_SSL_CA: str | None = Field(
+        default=None, description="Path to CA certificate file for SSL connection"
+    )
+    DB_SSL_ENABLED: bool = Field(
+        default=True, description="Enable SSL for database connection"
+    )
+
     # API settings - デフォルト値あり
     API_PORT: int = Field(default=5000, description="API server port")
     DEBUG: bool = Field(default=False, description="Debug mode flag")
@@ -154,7 +162,11 @@ class AppConfig(BaseSettings):
         elif self.DB_DRIVER == "mysql":
             # MySQL/TiDB: 必須フィールドはvalidate_db_dependenciesで検証済み
             password = self.DB_PASSWORD or ""
-            return f"mysql+pymysql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+            url = f"mysql+pymysql://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+            # Add SSL parameters for TiDB Cloud
+            if self.DB_SSL_ENABLED and self.DB_SSL_CA:
+                url += f"?ssl_ca={self.DB_SSL_CA}"
+            return url
         raise ValueError(f"Unsupported DB_DRIVER: {self.DB_DRIVER}")
 
     def to_flask_config(self) -> dict:
@@ -176,11 +188,18 @@ class AppConfig(BaseSettings):
 
         # MySQL/TiDB接続時のみ接続プール設定を追加
         if self.DB_DRIVER == "mysql":
-            config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            engine_options: dict = {
                 "pool_size": 5,
                 "pool_recycle": 3600,
                 "pool_pre_ping": True,
             }
+            # SSL configuration for TiDB Cloud
+            if self.DB_SSL_ENABLED and self.DB_SSL_CA:
+                engine_options["connect_args"] = {
+                    "ssl_ca": self.DB_SSL_CA,
+                    "ssl_verify_cert": True,
+                }
+            config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options
 
         return config
 

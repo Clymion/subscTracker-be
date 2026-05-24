@@ -35,7 +35,6 @@
                 "streetsidesoftware.code-spell-checker",
                 "mhutchie.git-graph",
                 "GitHub.copilot",
-                "yzhang.markdown-all-in-one",
                 "PKief.material-icon-theme",
                 "christian-kohler.path-intellisense",
                 "Gruntfuggly.todo-tree",
@@ -44,7 +43,6 @@
                 "humao.rest-client",
                 "GitHub.vscode-pull-request-github",
                 "hbenl.vscode-test-explorer",
-                "bierner.markdown-mermaid",
                 "tamasfe.even-better-toml",
                 "ms-vscode.makefile-tools"
             ],

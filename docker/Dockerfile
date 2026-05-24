@@ -6,7 +6,7 @@ RUN echo "\\nalias ll='ls -la --color'\\n" >> /root/.bashrc
 
 # 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
-    git apt-transport-https ca-certificates gnupg curl \
+    git apt-transport-https ca-certificates gnupg curl default-mysql-client sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Poetry のインストールと設定
@@ -44,6 +44,10 @@ COPY . .
 
 # データベースのディレクトリを作成（SQLite使用時のため）
 RUN mkdir -p /workspace/instance
+
+# TiDB Cloud CA証明書をコピー（SSL接続用）
+# 注: credentials/tidb_ca.crt をTiDB Cloudコンソールからダウンロードして配置してください
+COPY credentials/tidb_ca.crt /etc/ssl/certs/tidb_ca.crt
 
 # entrypointスクリプトをコピーして実行権限を付与
 COPY entrypoint.sh .

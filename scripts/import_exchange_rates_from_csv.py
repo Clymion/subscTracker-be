@@ -1,16 +1,14 @@
 """
 Import historical exchange rates from a CSV file into the DB.
 
-Expected CSV format (example header):
-UTC,Open,High,Low,Close,Volume
-01.06.2025 00:00:00 UTC,163.157,163.418,163.117,163.246,11290.27
+Expected CSV format (header):
+商品名,商品タイプ,取引日,当日清算価格
+USD/JPY,"U.S. Dollar-Japanese Yen",2026/03/23,158.445
 
-Filename should contain the currency pair in the form `FROM-TO_...`, for example:
-`USD-JPY_Day_2025-06-01_to_2025-11-23_UTC.csv` -> from_currency=USD, to_currency=JPY
-
-The script will insert/update rows into the `exchange_rates` table. It will also
-optionally create same-currency synthetic rates (rate=1.0) for both currencies
-for each date present in the CSV to avoid missing-parent FK issues.
+A single file may contain multiple currency pairs. The script will insert/update
+rows into the `exchange_rates` table for every pair found. It will also optionally
+create same-currency synthetic rates (rate=1.0) for both currencies for each date
+to avoid missing-parent FK issues.
 """
 
 from __future__ import annotations
@@ -31,61 +29,46 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 
+# Column indices in the new CSV format
+_COL_PAIR = 0
+_COL_DATE = 2
+_COL_RATE = 3
 
-def infer_pair_from_filename(filename: str) -> tuple[str, str] | None:
+
+def parse_csv_rows(
+    path: Path,
+) -> dict[str, list[tuple[datetime.date, float]]]:
     """
-    Infer FROM and TO currency codes from the filename.
-
-    Expects pattern like `USD-JPY_...` at start of name.
-    Returns (from_currency, to_currency) or None if not found.
+    Parse CSV and return dict keyed by pair string (e.g. "USD/JPY")
+    mapping to a list of (date, rate) tuples.
     """
-    name = Path(filename).name
-    parts = name.split("_")
-    if not parts:
-        return None
-    first = parts[0]
-    if "-" not in first:
-        return None
-    from_cur, to_cur = first.split("-", 1)
-    if (
-        len(from_cur) == 3
-        and len(to_cur) == 3
-        and from_cur.isalpha()
-        and to_cur.isalpha()
-    ):
-        return from_cur.upper(), to_cur.upper()
-    return None
-
-
-def parse_csv_rows(path: Path) -> list[tuple[datetime.date, float]]:
-    """
-    Parse CSV and return list of (date, close_rate).
-
-    Assumes the timestamp format in the provided CSV is like: '01.06.2025 00:00:00 UTC'
-    and that the `Close` column is the 5th column (index 4).
-    """
-    rows: list[tuple[datetime.date, float]] = []
+    result: dict[str, list[tuple[datetime.date, float]]] = {}
     with path.open("r", newline="", encoding="utf-8") as fh:
         reader = csv.reader(fh)
         next(reader, None)  # skip header
         for r in reader:
-            if not r or len(r) < 5:
+            if not r or len(r) < 4:
                 continue
-            date_str = r[0].strip()
-            close_str = r[4].strip()
+            pair = r[_COL_PAIR].strip()
+            if not pair or "/" not in pair:
+                logging.warning("Skipping row with invalid pair: %s", r[_COL_PAIR])
+                continue
+            date_str = r[_COL_DATE].strip()
+            rate_str = r[_COL_RATE].strip()
+            if not date_str or not rate_str:
+                continue
             try:
-                dt = datetime.datetime.strptime(date_str, "%d.%m.%Y %H:%M:%S UTC")
-                d = dt.date()
+                d = datetime.datetime.strptime(date_str, "%Y/%m/%d").date()
             except ValueError:
                 logging.warning("Skipping row with unparsable date: %s", date_str)
                 continue
             try:
-                rate = float(close_str.replace(",", ""))
+                rate = float(rate_str.replace(",", ""))
             except ValueError:
-                logging.warning("Skipping row with unparsable rate: %s", close_str)
+                logging.warning("Skipping row with unparsable rate: %s", rate_str)
                 continue
-            rows.append((d, rate))
-    return rows
+            result.setdefault(pair, []).append((d, rate))
+    return result
 
 
 _EXCHANGE_RATE_COLUMNS = [
@@ -191,7 +174,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--from-to",
-        help="Optional override for FROM-TO pair (e.g. USD-JPY)",
+        help=(
+            "Optional filter for a specific currency pair (e.g. USD-JPY). "
+            "Only that pair will be imported."
+        ),
     )
     parser.add_argument(
         "--no-synthetic",
@@ -206,27 +192,28 @@ def main() -> None:
         logging.error("CSV file not found: %s", csv_path)
         sys.exit(1)
 
-    pair = None
-    if args.from_to:
-        if "-" in args.from_to:
-            a, b = args.from_to.split("-", 1)
-            pair = (a.upper(), b.upper())
-        else:
-            logging.error("--from-to must be in the form FROM-TO, e.g. USD-JPY")
-            sys.exit(1)
-    else:
-        pair = infer_pair_from_filename(csv_path.name)
-
-    if not pair:
-        logging.error(
-            "Could not infer currency pair from filename. Use --from-to to specify.",
-        )
+    all_pairs = parse_csv_rows(csv_path)
+    if not all_pairs:
+        logging.error("No valid rows parsed from CSV: %s", csv_path)
         sys.exit(1)
 
-    from_currency, to_currency = pair
-    rows = parse_csv_rows(csv_path)
-    if not rows:
-        logging.error("No valid rows parsed from CSV: %s", csv_path)
+    # Normalize --from-to filter: accept both "USD-JPY" and "USD/JPY"
+    filter_pair: str | None = None
+    if args.from_to:
+        filter_pair = args.from_to.replace("-", "/").upper()
+
+    filtered_pairs: dict[str, list[tuple[datetime.date, float]]] = {}
+    for pair, rows in sorted(all_pairs.items()):
+        pair_normalized = pair.replace("/", "/").upper()
+        if filter_pair and pair_normalized != filter_pair:
+            continue
+        filtered_pairs[pair] = rows
+
+    if not filtered_pairs:
+        logging.error(
+            "No matching pairs found. Available: %s",
+            ", ".join(sorted(all_pairs.keys())),
+        )
         sys.exit(1)
 
     try:
@@ -236,22 +223,27 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        insert_rates(
-            conn=conn,
-            driver=driver,
-            from_currency=from_currency,
-            to_currency=to_currency,
-            rates=rows,
-            source=f"csv:{csv_path.name}",
-            create_synthetic=args.create_synthetic,
-        )
-        logging.info(
-            "Import complete for %s->%s (%d rows) [driver=%s]",
-            from_currency,
-            to_currency,
-            len(rows),
-            driver,
-        )
+        for pair, rows in filtered_pairs.items():
+            if "/" not in pair:
+                logging.warning("Skipping invalid pair: %s", pair)
+                continue
+            from_currency, to_currency = (c.strip().upper() for c in pair.split("/", 1))
+            insert_rates(
+                conn=conn,
+                driver=driver,
+                from_currency=from_currency,
+                to_currency=to_currency,
+                rates=rows,
+                source=f"csv:{csv_path.name}",
+                create_synthetic=args.create_synthetic,
+            )
+            logging.info(
+                "Import complete for %s->%s (%d rows) [driver=%s]",
+                from_currency,
+                to_currency,
+                len(rows),
+                driver,
+            )
     except Exception:
         logging.exception("Import failed")
         sys.exit(1)
