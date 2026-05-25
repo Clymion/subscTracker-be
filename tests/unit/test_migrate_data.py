@@ -44,7 +44,17 @@ def sqlite_db_path(tmp_path: Path) -> Path:
 @pytest.fixture
 def source_engine(sqlite_db_path: Path):
     """Create source SQLite engine with test data."""
+    from sqlite3 import Connection as SQLiteConnection
+    from sqlalchemy import event
+
     engine = create_engine(f"sqlite:///{sqlite_db_path}")
+
+    @event.listens_for(engine, "connect")
+    def _enable_fk(dbapi_connection, _connection_record):
+        if isinstance(dbapi_connection, SQLiteConnection):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys = ON")
+            cursor.close()
 
     # Create all tables
     db.metadata.create_all(engine)
@@ -112,7 +122,17 @@ def source_engine(sqlite_db_path: Path):
 @pytest.fixture
 def dest_engine():
     """Create destination in-memory SQLite engine (simulating TiDB)."""
+    from sqlite3 import Connection as SQLiteConnection
+    from sqlalchemy import event
+
     engine = create_engine("sqlite:///:memory:")
+
+    @event.listens_for(engine, "connect")
+    def _enable_fk(dbapi_connection, _connection_record):
+        if isinstance(dbapi_connection, SQLiteConnection):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys = ON")
+            cursor.close()
 
     # Create all tables
     db.metadata.create_all(engine)

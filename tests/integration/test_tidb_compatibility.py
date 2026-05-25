@@ -8,100 +8,10 @@ Requirements: 2.1, 2.2, 2.3, 3.1-3.5, 4.1-4.4
 Tasks: 3.1, 3.2, 3.3, 3.4
 """
 
-from sqlite3 import Connection as SQLiteConnection
-from unittest.mock import MagicMock, patch
-
 import pytest
-from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
 
-from app.models import db, set_sqlite_pragma
-
-
-class TestSQLitePragmaConditionalExecution:
-    """Test SQLite PRAGMA conditional execution.
-
-    Requirement: 2.1, 2.2, 2.3 - SQLite PRAGMA条件分岐
-    Task: 3.1 - SQLite PRAGMA条件分岐の動作確認
-    """
-
-    def test_pragma_executes_for_sqlite_connection(self) -> None:
-        """Test that PRAGMA is executed for SQLite connections.
-
-        Requirement: 2.1, 2.2 - SQLite接続時のみPRAGMAが実行される
-        """
-        # Create SQLite engine
-        engine = create_engine("sqlite:///:memory:")
-
-        # Track if PRAGMA was executed
-        pragma_executed = False
-
-        @event.listens_for(engine, "connect")
-        def track_pragma(dbapi_connection, connection_record):
-            nonlocal pragma_executed
-            # Check that the PRAGMA function would execute
-            if isinstance(dbapi_connection, SQLiteConnection):
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA foreign_keys = ON")
-                cursor.close()
-                pragma_executed = True
-
-        # Connect to trigger the event
-        with engine.connect() as conn:
-            pass
-
-        # Verify SQLite connection was identified
-        assert pragma_executed is True
-
-    def test_pragma_skipped_for_non_sqlite_connection(self) -> None:
-        """Test that PRAGMA is skipped for non-SQLite connections.
-
-        Requirement: 2.3 - TiDB/MySQL接続時はPRAGMAがスキップされる
-        """
-        # Create a mock connection that is not SQLiteConnection
-        mock_connection = MagicMock()
-        mock_connection.__class__.__name__ = "MySQLConnection"
-
-        # Test that set_sqlite_pragma handles non-SQLite correctly
-        # The function should check isinstance and skip for non-SQLite
-        assert not isinstance(mock_connection, SQLiteConnection), \
-            "Mock should not be identified as SQLiteConnection"
-
-    def test_set_sqlite_pragma_function_handles_sqlite(self) -> None:
-        """Test set_sqlite_pragma function handles SQLite correctly."""
-        # Create an in-memory SQLite database
-        engine = create_engine("sqlite:///:memory:")
-
-        # Attach the set_sqlite_pragma listener
-        event.listen(engine, "connect", set_sqlite_pragma)
-
-        # Connect and verify foreign keys are enabled
-        with engine.connect() as conn:
-            result = conn.execute(db.text("PRAGMA foreign_keys"))
-            row = result.fetchone()
-            assert row is not None
-            # Foreign keys should be enabled (1)
-            assert row[0] == 1 or row[0] is True
-
-    def test_set_sqlite_pragma_function_handles_mock_mysql(self) -> None:
-        """Test set_sqlite_pragma function handles non-SQLite (mock MySQL)."""
-        # Create a mock MySQL connection (not SQLiteConnection)
-        # Use MagicMock without spec to allow any attribute access
-        mock_connection = MagicMock()
-        # Ensure it's not identified as SQLiteConnection
-        mock_cursor = MagicMock()
-        mock_connection.cursor.return_value = mock_cursor
-
-        # Call the function with a mock connection
-        # The function checks isinstance(dbapi_connection, SQLiteConnection)
-        # Our mock is not an instance, so PRAGMA should be skipped
-        set_sqlite_pragma(mock_connection, None)
-
-        # Verify cursor.execute was NOT called (PRAGMA skipped for non-SQLite)
-        # Since the mock is not a SQLiteConnection, the function should return early
-        # and not call cursor.execute
-        mock_cursor.execute.assert_not_called()
+from app.models import db
 
 
 class TestAlembicEnvironmentSetup:

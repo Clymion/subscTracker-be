@@ -11,7 +11,14 @@ services:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud/adc.json
-      - DB_NAME=${DB_NAME:-instance/app.db}
+      - DB_DRIVER=${DB_DRIVER:-mysql}
+      - DB_HOST=${DB_HOST:-tidb}
+      - DB_PORT=${DB_PORT:-4000}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_NAME=${DB_NAME:-subsc_tracker}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["https://subsctracker-fe.web.app"]}
     volumes:
       - .:/workspace:cached
       - ./credentials/subscTracker_adc.json:/tmp/gcloud/adc.json:ro

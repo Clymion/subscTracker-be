@@ -6,11 +6,13 @@ Focus on clarity and simplicity over sophisticated patterns.
 """
 
 from collections.abc import Generator
+from sqlite3 import Connection as SQLiteConnection
 
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 from flask_jwt_extended import JWTManager
+from sqlalchemy import event
 from sqlalchemy.orm import Session, scoped_session
 
 from app import create_app
@@ -56,9 +58,18 @@ def app(test_config: TestConfig) -> Generator[Flask, None, None]:
 
     # Create database tables
     with app.app_context():
+        # Enable foreign keys for SQLite test database
+        event.listen(_db.engine, "connect", _enable_sqlite_fk)
         _db.create_all()
         yield app
         _db.drop_all()
+
+
+def _enable_sqlite_fk(dbapi_connection, _connection_record):
+    if isinstance(dbapi_connection, SQLiteConnection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON")
+        cursor.close()
 
 
 @pytest.fixture

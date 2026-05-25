@@ -42,9 +42,6 @@ COPY --from=builder /workspace/poetry.lock /workspace/poetry.lock
 # アプリケーションコードをコピー
 COPY . .
 
-# データベースのディレクトリを作成（SQLite使用時のため）
-RUN mkdir -p /workspace/instance
-
 # TiDB Cloud CA証明書をコピー（SSL接続用）
 # 注: credentials/tidb_ca.crt をTiDB Cloudコンソールからダウンロードして配置してください
 COPY credentials/tidb_ca.crt /etc/ssl/certs/tidb_ca.crt
